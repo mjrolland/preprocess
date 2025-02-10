@@ -1,0 +1,24 @@
+Package: preprocess
+Title: Preprocessing Functions for Environmental Data
+Version: 0.1.0
+Authors@R: person("Matthieu", "Rolland", email = "mj.rolland@gmail.com", role = c("aut", "cre"))
+Description: This package provides functions to preprocess environmental datasets, including standardization and fill-in methods for handling below-LOD values.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.2
+Imports:
+    dplyr,
+    tidyr,
+    broom,
+    stringr,
+    readr,
+    msm,
+    NADA,
+    car,
+    tidycat
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+Roxygen: list(markdown = TRUE)
