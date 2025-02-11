@@ -6,13 +6,13 @@ An R package for preprocessing environmental datasets.
 
 You can install this package from GitHub using `devtools`:
 
-```
+```r
 devtools::install_github("mjrolland/preprocess")
 ```
 
 ## Usage
 
-```
+```r
 library(preprocess)
 ```
 
@@ -21,47 +21,16 @@ library(preprocess)
 - `fill_in()`: Handles values below the limit of detection.
 - `standardise()`: Standardizes exposure data based on protocol variables.
 
-## Example
+## Documentation
 
-### Filling in Values Below LOD
+For a practical **step-by-step guide** on using this package, refer to the **vignette** or the **accompanying article**:
 
-```
+- Vignette: `vignette("preprocess-intro", package = "preprocess")`
+- Article: [Preprocessing Environmental Data](https://mjrolland.github.io/preprocess/articles/preprocess-intro.html)
 
-# Example data
-data <- c(1, 2, 0.5, 3, 0.2, 0.8)
-lod <- c(NA, NA, 1, NA, 1, 1)
+For a **theoretical background** on the preprocessing methodology, see the detailed documentation:
 
-# Apply fill-in method
-result <- fill_in(data, lod)
-print(result)
-
-```
-
-### Standardizing Exposure Data
-
-```
-
-library(preprocess)
-library(dplyr)
-
-# Simulated dataset
-df <- data.frame(
-  id = 1:100,
-  exp1 = rnorm(100, mean = 3, sd = 1),
-  batch = factor(sample(1:5, 100, replace = TRUE)),
-  prot1 = rnorm(100, mean = 0, sd = 0.3)
-)
-
-# Standardize the data
-df_standardized <- df |>
-  group_by(batch) |>
-  mutate(
-    exp1_std = standardise(., var_to_std = "exp1", protocol_vars = "prot1")
-  )
-
-head(df_standardized)
-
-```
+[https://bookdown.org/mj_rolland/sepages_pipeline_doc/](https://bookdown.org/mj_rolland/sepages_pipeline_doc/)
 
 ## Contributing
 

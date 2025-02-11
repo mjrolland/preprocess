@@ -3,7 +3,7 @@ pkgdown: 2.1.1
 pkgdown_sha: ~
 articles:
   preprocess-intro: preprocess-intro.html
-last_built: 2025-02-11T10:41Z
+last_built: 2025-02-11T10:47Z
 urls:
   reference: https://mjrolland.github.io/preprocess/reference
   article: https://mjrolland.github.io/preprocess/articles
