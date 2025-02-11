@@ -1,0 +1,393 @@
+---
+title: "Introduction to preprocess"
+author: "Matthieu Rolland"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to preprocess}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: biblio.bib
+csl: https://www.zotero.org/styles/nature
+execute: 
+  warning: false
+number-sections: true
+---
+
+
+```{r, echo=FALSE, warning=FALSE, error=FALSE}
+# packages
+library(tidyverse) # manipulate data, data viz
+library(rio)       # import data
+library(scales)    # helper 
+library(gt)        # print table with formattig
+library(NADA)      # compute distribution parameters on censored data
+library(msm)       # random draw in truncated normal distribution
+library(preprocess)
+```
+
+# Introduction
+
+This vignette demonstrates the use of simulated datasets to illustrate the application of the fill_in and standardise functions for preprocessing environmental exposure data.
+
+Specifically, it covers how to:
+
+- Handle values below the Limit of Detection (LOD) using the method proposed by Helsel (1990). This approach accommodates one or multiple exposure components, each with potentially different LODs.
+- Standardize exposure data by adjusting for protocol variables selected from a list of candidates, while also accounting for additional covariates, following the method of Mortamais et al. (2012).
+
+# The Simulated Data
+
+The datasets used in this example were designed to resemble real-world environmental exposure data. They simulate common scenarios where LOD handling and standardization are necessary. 
+
+```{r}
+# load simulated data 
+data("dt_exp")
+data("dt_lod")
+```
+
+The example data (`dt_exp`) consists of the following variables:  
+
+- 4 lognormally distributed exposures `exp1`, `exp2`, `exp3` and `exp4`, left censored (LOD), with missing data. Data below LOD is reported as "<LOD". 
+- `batch`, batch effect which is TRUE for `exp1` and `exp4`
+- `prot1` continuous protocol variable associated with `exp2` 
+- `prot2` continuous protocol variable associated with none of the exposures
+- `season`, season effect which is TRUE for `exp4`, in addition to the batch effect
+- `cov1`, additional covariate to be included in standardisation models
+
+Examples of candidate protocol variables include: sample transportation time, sample defreeze time prior to measurement. Examples of additional covariates to be included in the standardisation model include: age or breastfeeding duration.
+
+The data is in a wide format (one column per exposure), which is the usual format such data is provided by analytical laboratories. 
+
+```{r}
+head(dt_exp)
+```
+
+```{r}
+head(dt_lod)
+```
+
+
+# Prepare data
+
+Data first needs to be converted to tidy format (one row per id and per compound, one column per variable) and LOD needs to be added in new column:
+
+```{r}
+# convert exposure to long format and add lod
+dt_exp_long <- dt_exp |>
+  pivot_longer(
+    cols = starts_with("exp"),
+    values_to = "val",
+    names_to = "exp"
+  ) |>
+  left_join(dt_lod, by = "exp") |>
+  mutate(
+    val_num = ifelse(val == "<LOD", lod / 2, as.numeric(val))
+  )
+```
+
+
+```{r}
+head(dt_exp_long)
+```
+
+
+# Data description
+
+It is important to describe data prior to pre-processing.  
+
+Detection rates and basic statistics:
+
+```{r, echo=FALSE}
+# describe exposure data
+tbl <- dt_exp_long |>
+  mutate(
+    below_lod = val == "<LOD"
+  ) |>
+  summarise(
+    below_lod = scales::label_percent()(sum(below_lod, na.rm = TRUE) / sum(!is.na(below_lod))),
+    p5 = quantile(val_num, 0.05, na.rm = TRUE),
+    p50 = quantile(val_num, 0.5, na.rm = TRUE),
+    p95 = quantile(val_num, 0.95, na.rm = TRUE),
+    lod = unique(lod),
+    .by = exp
+  ) |>
+  mutate(
+    p5 = ifelse(p5 < lod, "<LOD", as.character(round(p5, 2))),
+    p50 = ifelse(p50 < lod, "<LOD", as.character(round(p50, 2))),
+    p95 = ifelse(p95 < lod, "<LOD", as.character(round(p95, 2)))
+  ) |>
+  select(exp, below_lod, p5, p50, p95) |>
+  gt() |>
+  cols_label(
+    exp = "Exposure",
+    below_lod = "% < LOD",
+    p5 = "p5",
+    p50 = "Median",
+    p95 = "p95"
+  ) |>
+  tab_caption("Description of raw exposure data")
+
+tbl
+```
+
+Exposure level distribution:
+
+```{r echo=FALSE, fig.height=5}
+ggplot(dt_exp_long, aes(x = val_num)) +
+  geom_histogram() +
+  facet_wrap(~exp, scales = "free") +
+  geom_vline(aes(xintercept = lod, linetype = "LOD"), color = "red") +
+  see::theme_lucid() +
+  theme(
+    legend.title = element_blank()
+  ) +
+  labs(
+    x = "Exposure level",
+    y = "Count"
+  ) +
+  labs(title = "Distribution of measure exposure levels, with LOD")
+
+```
+
+=> We observe different rates of data below LOD. Based on this, exposures that are considered having too high rates of data < LOD need to be excluded from the imputation-standardisation process. In this example `exp3` will be removed from any further processing and will be categorised.
+
+# Step 1: Fill in data below LOD
+
+The `fill_in` function is written to be used on tidy data (one row per id and per exposure). It is important to specify the `.by` argument of the `mutate` call in order to separately impute data below LOD for each group. This is important because this step requires computing exposure specific distribution parameters, and LOD can also vary from one exposure to another. In this simple example the only grouping variable is the exposure, but there could be more groups on which we would like to apply the fill-in procedure separately like exposure *and* sample period, in which case the `.by` argument of the `mutate` call would be modified to `.by = c(exp, period)`. 
+
+Also note that data needs to be normally distributed, and if the data is log transformed, the LOD also needs to be log transformed.
+
+Fill in is done like this:
+
+```{r}
+# Impute data below LOD 
+set.seed(113)
+dt_imp <- dt_exp_long |>
+  filter(exp != "exp3") |>
+  mutate(
+    log10_val_i = fill_in(
+      var_to_fill = log10(val_num), # variable to be filled in, needs to be normal
+      lod = log10(lod)              # variable containing LOD, needs to be same unit as variable to fill
+    ),
+    .by = exp
+  )
+
+```
+
+**Important**: set a seed prior to fill-in for reproducibility.
+
+Then systematically visualise the imputations to make sure everything went as expected: 
+
+```{r echo=FALSE, fig.height=3}
+dt_imp |>
+  mutate(
+    color = case_when(
+      val_num > lod ~ "imputed",
+      val_num <= lod ~ "not imputed"
+    )
+  ) |> 
+  ggplot(aes(x = 10^log10_val_i, fill = color)) +
+  geom_histogram(alpha = 0.8) +
+  facet_wrap(~exp, ncol = 4) +
+  see::theme_lucid() +
+  see::scale_fill_material_d() +
+  scale_x_log10() +
+  labs(
+    x = "Value",
+    title = "Distribution of measure exposure levels including imputed data below LOD"
+  )
+
+```
+
+We see that imputed data is below LOD, and seem to have been drawn from the correct distribution.
+
+# Step 2: Standardise data on protocol variables
+
+Next we want to standardise the filled-in values on protocol variables `batch`, `prot1` and `prot2`, while taking into account the covariates `season` and `cov1`.  
+
+We start by describing the data.  
+
+We can observe the batch effect for `exp1` and `exp4`:
+
+```{r echo=FALSE, fig.height=3, fig.width=5}
+ggplot(dt_imp, aes(x = factor(batch), y = log10_val_i)) +
+  geom_boxplot() +
+  facet_wrap(~exp) +
+  see::theme_lucid() +
+  labs(
+    title = "Imputed exposure level by batch, for each exposure prior to standardising"
+  )
+
+```
+
+And we can observe the effect of season for `exp4`:
+
+```{r fig.height=3, fig.width=5}
+ggplot(dt_imp, aes(x = factor(season), y = log10_val_i)) +
+  geom_boxplot() +
+  facet_wrap(~exp) +
+  see::theme_lucid() +
+  labs(
+    title = "Imputed exposure level by season, for each exposure prior to standardising"
+  )
+
+```
+
+And finally we observe an unequal distribution of season by batch:
+
+```{r echo=FALSE, fig.height=3, fig.width=4}
+ggplot(dt_imp, aes(x = batch, fill = season)) +
+  geom_bar(position = "fill", alpha = 0.7) +
+  see::scale_fill_material_d(palette = "rainbow") +
+  see::theme_lucid() +
+  theme(legend.title = element_blank()) +
+  labs(
+    x = "Batch",
+    y = "Proportion (%)",
+    title = "Season distribution by batch"
+  ) +
+  scale_y_continuous(labels = scales::percent) 
+
+```
+
+This justifies the inclusion of `season` as a covariate in the standardisation models, in order to differentiate the effect of `batch` from the effect of `season`, because we want to standardise for `batch` but not for `season`.
+
+We can also observe the association between `exp2` and `prot1`:
+
+```{r echo=FALSE, fig.height=3}
+ggplot(dt_imp, aes(x = prot1, y = log10_val_i)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  facet_wrap(~exp) +
+  see::theme_lucid() +
+  labs(
+    title = "Imputed exposure level VS prot1 prior to standardising"
+  )
+```
+
+The goal of the standardisation process is to detect among all the protocol variables (`batch`, `prot1` and `prot2`) which are associated with which exposure, and standardise each exposures for the specific protocol to which it is associated. 
+
+The first step of the standardisation process is to define potential protocol variables that might be associated with the variable to standardise and the extra covariates to be included in the model:
+
+```{r}
+lst_prot_vars <- c("batch", "prot1", "prot2") 
+lst_cov <- c("season", "cov1")
+```
+
+Then define which are the reference values for the categorical variables (e.g. if the reference value for batch is *batch 2*, all batches will be "aligned" with batch 2):
+
+```{r}
+# set categorical variable reference values for categorical data
+dt_imp <- dt_imp |>
+  mutate(
+    batch = relevel(factor(batch), ref = "2"),
+    season = relevel(factor(season), ref = "Spring")
+  )
+```
+
+Reference value for continuous protocol variables is the median [@mortamais_correcting_2012].
+
+Once the protocol variables and the covariates have been listed and the reference values have been set, we can apply the standardisation function:
+
+```{r}
+# Standardise 
+dt_std <- dt_imp |>
+  mutate(
+    log10_val_i_std = standardise(
+      var_to_std = "log10_val_i",               # variable to be standardised
+      protocol_vars = lst_prot_vars,  # list of candidate protocol variables
+      covariates = lst_cov,              # optional list of covariates, defaults to NULL
+      folder = "standardisation_outputs"        # folder where outputs are saved
+    ),
+    .by = exp                                   # grouping variable
+  )
+```
+
+It is crucial to look at the standardisation process outputs and the data posterior to the standardisation step to make sure what was done matches what was expected.
+
+All outputs are saved in the folder defined in the `path` argument.
+
+We can first have a look at the associated protocol variables, that were used for the correction:
+
+```{r echo=FALSE}
+tbl_aov_exp1 <- import("standardisation_outputs/exp1_aov.csv") |> 
+  transmute(protocol_vars = term, exp1 = p.value)
+
+tbl_aov_exp2 <- import("standardisation_outputs/exp2_aov.csv") |> 
+  transmute(protocol_vars = term, exp2 = p.value)
+
+tbl_aov_exp4 <- import("standardisation_outputs/exp4_aov.csv") |> 
+  transmute(protocol_vars = term, exp4 = p.value)
+
+tbl_aov <- tbl_aov_exp1 |>
+  left_join(tbl_aov_exp2, by = "protocol_vars") |>
+  left_join(tbl_aov_exp4, by = "protocol_vars") |>
+  filter(!protocol_vars %in% c(lst_cov, "Residuals")) |>
+  mutate(
+    exp1 = format.pval(exp1, 2),
+    exp2 = format.pval(exp2, 2),
+    exp4 = format.pval(exp4, 2)
+  ) |>
+  gt() |>
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = exp1,
+      rows = exp1 < 0.2 
+    )
+  ) |>
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = exp2,
+      rows = as.numeric(exp2) < 0.2 
+    )
+  ) |>
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+    ),
+    locations = cells_body(
+      columns = exp4,
+      rows = exp4 < 0.2 
+    )
+  )
+
+tbl_aov
+```
+
+We see that the correct variables were detected.
+
+We can see the correction for the batch effect of `exp1` and `exp4`:
+
+```{r echo=FALSE, fig.height=3, fig.width=5}
+ggplot(dt_std, aes(x = factor(batch), y = log10_val_i_std)) +
+  geom_boxplot() +
+  facet_wrap(~exp) +
+  see::theme_lucid() +
+  labs(
+    title = "Standardised exposure level by batch, for each exposure"
+  )
+
+```
+
+We can note that there is still residual variability between batches for `exp4`, in our case this can be explained by the `season` effect for which we have not adjusted.
+
+And the correction of `exp2` for `prot1`:
+
+```{r echo=FALSE, fig.height=3}
+ggplot(dt_std, aes(x = prot1, y = log10_val_i_std)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  facet_wrap(~exp) +
+  see::theme_lucid() +
+  labs(
+    title = "Standardised exposure level VS prot1"
+  )
+```
+
+Note: The correction may not be so apparent, as realistic data likely possesses greater residual variability.
+

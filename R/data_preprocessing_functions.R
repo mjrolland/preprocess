@@ -4,61 +4,80 @@
 
 #' Fill-in Data Below Limit Of Detection (LOD)
 #'
-#' This function imputes values below the Limit of Detection (LOD) using the
-#' fill-in method by Helsel (1990). It assumes a normal distribution of data.
+#' This function fills in data below LOD using the fill-in method by Helsel
+#' (1990). It is designed to work with data that should have a normal
+#' distribution.
 #'
-#' @param var_to_fill A numeric vector of values to be imputed.
-#' @param lod A numeric vector of the limit of detection (LOD), the same length as `var_to_fill`.
-#' @param loq A numeric vector of the limit of quantification (LOQ), the same length as `var_to_fill`. Defaults to NULL.
+#' @param var_to_fill A numeric vector of values to fill.
+#' @param lod A numeric vector of the limit of detection (LOD), should be of the
+#'   same length as `var_to_fill`.
+#' @param loq A numeric vector of the limit of quantification (LOQ), should be of the
+#'   same length as `var_to_fill`.
+#' @details The function flags values that are to be imputed and computes
+#'   distribution parameters using the \code{NADA::cenros}. It then computes
+#'   fill-in values by performing a random sample between 0 and \code{lod} for a
+#'   normal distribution with the previously computed parameters. Finally, the
+#'   function replaces values below \code{lod} by fill-in values.
 #'
-#' @details
-#' The function identifies censored values (below LOD or LOQ), estimates distribution parameters
-#' using \code{NADA::cenros}, and then replaces censored values with random samples from a
-#' truncated normal distribution.
+#' @return A numeric vector with the original values and where those are below
+#'   LOD replaced by fill-in values below the limit of detection.
 #'
-#' @return A numeric vector with imputed values replacing those below LOD.
-#'
-#' @references
-#' Helsel, D.R. (1990). Less Than Obvious - Statistical Treatment of
-#' Data Below the Detection Limit. Environmental Science & Technology, 24(12), 1766-1774.
+#' @references Helsel, D.R. (1990). Less Than Obvious - Statistical Treatment of
+#'   Data Below the Detection Limit. Environmental Science & Technology, 24(12),
+#'   1766-1774.
 #'
 #' @export
+#'
 #' @importFrom NADA cenros mean sd
 #' @importFrom msm rtnorm
-fill_in <- function(var_to_fill, lod, loq = NULL) {
-  # Determine the threshold for imputation (either LOD or LOQ)
+#'
+#' @examples
+#' # Example dataset
+#' set.seed(113)
+#' values <- c(0.05, 0.1, 0.2, NA, 0.4, 0.5)
+#' lod <- rep(0.1, length(values))
+#'
+#' # Apply fill_in function
+#' imputed_values <- fill_in(values, lod)
+#' print(imputed_values)
+fill_in <- function(var_to_fill, lod, loq = NULL){
+  # define max lim
   max_lim <- ifelse(!is.null(loq), loq, lod)
 
-  # Identify values below the threshold (censored values)
+  # flag values to impute
   censored <- var_to_fill < max_lim
-  censored[is.na(censored)] <- FALSE  # Set NA to FALSE to avoid indexing issues
 
-  # Count number of values to be imputed
+  # set NA to FALSE as index cannot be NA
+  censored[is.na(censored)] <- FALSE
+
+  # count number of values to be imputed
   n_impute <- sum(censored)
 
-  # Compute distribution parameters using regression on order statistics (ROS)
-  stats_ros <- NADA::cenros(var_to_fill, censored, forwardT = NULL)  # No log transform
+  # compute distribution parameters
+  stats_ros <- NADA::cenros(var_to_fill, censored, forwardT = NULL) #"forwardT = NULL": no log transform
   dist_mean <- NADA::mean(stats_ros)
-  dist_sd   <- NADA::sd(stats_ros)
+  dist_sd <- NADA::sd(stats_ros)
 
-  # Handle cases where values between LOD and LOQ should also be imputed
-  if (!is.null(loq)) {
-    n_impute_loq <- sum(dplyr::between(var_to_fill, lod, loq), na.rm = TRUE)
-    censored_loq <- dplyr::between(var_to_fill, lod, loq)
+  # if data between lod and loq is to be imputed
+  if(!is.null(loq)){
+    n_impute_loq <- sum(between(var_to_fill, lod, loq), na.rm = TRUE)
+    censored_loq <- between(var_to_fill, lod, loq)
     censored_loq[is.na(censored_loq)] <- FALSE
 
-    # Generate fill-in values within the LOQ range
     fill_in_values_loq <- msm::rtnorm(
-      n = n_impute_loq, mean = dist_mean,
-      sd = dist_sd, lower = lod, upper = loq
+      n = n_impute_loq,
+      mean = dist_mean,
+      sd = dist_sd,
+      lower = lod,
+      upper = loq
     )
 
-    # Exclude LOQ-imputed values from further LOD imputations
+    # discount varioables between lod and loq imputation of data below LOD
     censored <- ifelse(censored_loq, FALSE, censored)
     n_impute <- n_impute - n_impute_loq
   }
 
-  # Generate fill-in values below LOD using truncated normal distribution
+  # fill in data below lod
   fill_in_values <- msm::rtnorm(
     n = n_impute,
     mean = dist_mean,
@@ -67,101 +86,210 @@ fill_in <- function(var_to_fill, lod, loq = NULL) {
     upper = lod
   )
 
-  # Replace values below LOD with imputed values
+  # replace values below LOD by fill in values
   vec_filled_in <- var_to_fill
   vec_filled_in[censored] <- fill_in_values
-  if (!is.null(loq)) vec_filled_in[censored_loq] <- fill_in_values_loq
+  if(!is.null(loq)){vec_filled_in[censored_loq] <- fill_in_values_loq}
 
   return(vec_filled_in)
 }
 
-#' Standardize Data on Protocol Variables
+
+#' Apply Standardisation on Protocol Variables
 #'
-#' Standardizes exposure data based on selected protocol variables.
-#' This function is designed for use within a `mutate` call in grouped data.
+#' This function standardises the exposure data on selected protocol variables
+#' (either categorical or continuous) as per the sepages pipeline guide.
+#' The function is designed to be called within a `mutate` call on grouped data,
+#' where each group represents a different exposure.
 #'
-#' @param data A data frame in tidy format containing the data to standardize.
-#' @param var_to_std A character string specifying the variable to standardize.
-#' @param protocol_vars A character vector of potential protocol variables for standardization.
-#' @param covariates A character vector of model covariates. Defaults to NULL.
-#' @param folder A character string specifying the folder where model outputs will be saved.
-#' @param group A character string indicating the grouping variable for exposure. Defaults to `dplyr::cur_group()`.
+#' @param data A data.frame in tidy format containing the data to standardise,
+#'   i.e., one row per ID and per exposure.
+#' @param var_to_std A character string representing the variable to standardise.
+#'   This variable should be normally distributed.
+#' @param protocol_vars A character vector representing potential protocol
+#'   variables on which to standardise.
+#' @param covariates A character vector of names of model covariates.
+#' @param folder A character string representing the folder where standardisation
+#'   regression outputs will be saved
+#' @param group A character string representing the grouping variable for
+#'   exposure. Defaults to the current grouping.
 #'
 #' @details
-#' The function selects relevant protocol variables (p < 0.2), builds a model,
-#' extracts residuals, and standardizes values accordingly.
+#' The function selects the final protocol variables on which to standardise
+#' based on p < 0.2. It constructs a formula, computes model residuals,
+#' sets reference values for prediction, computes standardised values, and
+#' finally returns a vector with corrected values and NA for non-computable
+#' residuals, maintaining the length same as input data.
 #'
-#' @return A numeric vector of standardized values.
+#' @return
+#' A numeric vector containing the corrected values after standardisation.
+#' The length of the returned vector is the same as the number of rows in
+#' the input data. Non-computable residuals are returned as `NA`.
+#'
+#' @seealso
+#' \code{\link[dplyr]{mutate}}, \code{\link[stats]{lm}}, \code{\link[stats]{predict}}, \code{\link[stats]{residuals}}
 #'
 #' @export
-#' @importFrom dplyr mutate cur_group left_join select everything pull
-#' @importFrom stringr str_c
-#' @importFrom broom tidy
-standardise <- function(data = dplyr::pick(everything()), var_to_std,
-                        protocol_vars, covariates = NULL, folder,
-                        group = dplyr::cur_group()) {
+#'
+#' @examples
+#' # Example dataset
+#' set.seed(113)
+#' data <- data.frame(
+#'   exposure = rnorm(100, mean = 5, sd = 2),
+#'   protocol_var1 = sample(c("A", "B", "C"), 100, replace = TRUE),
+#'   protocol_var2 = runif(100, 0, 1),
+#'   age = rnorm(100, mean = 35, sd = 10)
+#' )
+#'
+#' # Apply standardisation function
+#' standardised_values <- data |>
+#'   mutate(
+#'     exposure_std = standardise(
+#'       var_to_std = "exposure",
+#'       protocol_vars = c("protocol_var1", "protocol_var2"),
+#'       covariates = "age",
+#'       folder = "outputs/"
+#'     )
+#'   )
+#'
+#' head(standardised_values)
 
-  # Identify protocol variables that influence the variable to standardize
-  final_std_vars <- get_protocol_var(
-    data,
+standardise <- function(
+    data = pick(everything()),
     var_to_std,
     protocol_vars,
-    covariates,
+    covariates = NULL,
     folder,
-    group
-  )
+    group = dplyr::cur_group()
+){
+  # Select protocol variables for standardisation (p < 0.2)
+  final_std_vars <- get_protocol_var(data, var_to_std, protocol_vars, covariates, folder, group)
 
-  # Construct linear model formula for standardization
+  # Construct model formula with final protocol variables (p < 0.2)
   form <- stringr::str_c(
-    var_to_std, "~", paste(final_std_vars, collapse = "+"),
-    if (!is.null(covariates)) { "+" }, paste(covariates, collapse = "+")
+    var_to_std,
+    "~",
+    paste(final_std_vars, collapse = "+"),
+    if(!is.null(covariates)){"+"},
+    paste(covariates, collapse = "+")
   ) |>
     as.formula()
 
-  # Fit linear model
+  # Fit model
   lm1 <- lm(form, data = data)
 
-  # Extract model coefficients (betas)
-  betas <- broom::tidy(lm1)
+  # Get betas
+  betas <- lm1 |>
+    broom::tidy() |>
+    tidycat::tidy_categorical(m = lm1)
 
-  # Apply correction based on protocol variables
-  for (prot_var in final_std_vars) {
+  # add all correction factor
+  for(prot_var in final_std_vars){
+
+    # get class (numeric or categorical)
     class_i <- class(data[[prot_var]])
 
-    if (class_i == "numeric") {
-      # Numeric variable: apply median-centered correction
+    if(class_i == "numeric"){
+
+      # get beta
       beta_i <- betas |>
-        dplyr::filter(variable == prot_var) |>
-        dplyr::pull(estimate)
+        filter(variable == prot_var) |>
+        pull(estimate)
+
+      # prepare correction factor
       data <- data |>
-        dplyr::mutate(
-          !!stringr::str_c("correct_", prot_var) := beta_i * (.data[[prot_var]] - median(data[[prot_var]], na.rm = TRUE))
+        mutate(
+          !!str_c("correct_", prot_var) := beta_i * (.data[[prot_var]] - median(data[[prot_var]], na.rm = TRUE))
         )
 
-    } else if (class_i == "factor") {
-      # Factor variable: apply categorical correction
+    }else if(class_i == "factor"){
+
+      # get betas and prepare correction factor (==beta)
       beta_i <- betas |>
-        dplyr::filter(variable == prot_var) |>
-        dplyr::select(estimate, level) |>
-        dplyr::rename(!!prot_var := level, !!stringr::str_c("correct_", prot_var) := estimate)
+        filter(variable == prot_var) |>
+        select(estimate, level) |>
+        rename(
+          !!prot_var := level,
+          !!str_c("correct_", prot_var) := estimate
+        )
 
+      # add betas to data frame
       data <- data |>
-        dplyr::left_join(beta_i, by = prot_var)
+        left_join(beta_i, by = prot_var)
 
-    } else {
-      stop(stringr::str_c(
-        "Protocol variables must be continuous or factor, not: ", class_i,
-        " (variable ", prot_var, ")"
+    }else{
+
+      stop(
+        str_c(
+          "Protocol variables need to be coded as continuous or factor, not: ",
+          class_i, "(variable ", prot_var, ")"
+        )
       )
-      )
+
     }
   }
 
-  # Compute standardized values by removing protocol-based corrections
+  # standardise
   data <- data |>
-    dplyr::mutate(
-      val_std = .data[[var_to_std]] - rowSums(dplyr::pick(dplyr::starts_with("correct")), na.rm = TRUE)
+    mutate(
+      val_std = .data[[var_to_std]] - rowSums(pick(starts_with("correct")), na.rm = TRUE)
     )
 
+  # Return the vector of standardised values
   return(data$val_std)
+}
+
+#' Get Protocol Variables for Standardisation
+#'
+#' This function identifies which among the potential protocol variables should
+#' be used for standardising a given exposure. It exports outputs for the
+#' different steps of the process.
+#'
+#' @param data A data frame containing the exposure and protocol variables.
+#' @param var_to_std A character string with the name of the variable to be
+#'   standardised.
+#' @param protocol_vars A character vector of names of potential protocol
+#'   variables.
+#' @param covariates A character vector of names of model covariates.
+#' @param folder The directory folder where the output CSV files will be saved.
+#' @param group The group/exposure under consideration.
+#' @return A character vector containing the names of the final protocol
+#'   variables to be used for standardisation.
+#'
+get_protocol_var <- function(data, var_to_std, protocol_vars, covariates, folder, group){
+  # Construct linear model formula
+  model_formula <- str_c(
+    var_to_std,
+    "~",
+    paste(protocol_vars, collapse = "+"),
+    if(!is.null(covariates)){"+"},
+    paste(covariates, collapse = "+")
+  )
+
+  # Fit the full linear model
+  lm_full <- lm(as.formula(model_formula), data = data)
+
+  # Extract betas from the model and export to CSV
+  betas <- broom::tidy(lm_full)
+
+  # export
+  filename <- str_c(paste(group, collapse = "_"), ".csv")
+  write_csv(betas, file.path(folder, filename))
+
+  # Perform ANOVA and get p-values
+  aov_output <- car::Anova(lm_full)
+
+  # export anova output
+  filename <- str_c(paste(group, collapse = "_"), "_aov.csv")
+  write_csv(broom::tidy(aov_output), file.path(folder, filename))
+
+  # Identify and return protocol variables with p < 0.2
+  final_std_vars <- aov_output |>
+    as.data.frame() |>
+    rownames_to_column(var = "term") |>
+    rename(p = "Pr(>F)") |>
+    filter(term %in% protocol_vars & p < 0.2) |>
+    pull(term)
+
+  return(final_std_vars)
 }

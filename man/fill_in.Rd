@@ -7,25 +7,42 @@
 fill_in(var_to_fill, lod, loq = NULL)
 }
 \arguments{
-\item{var_to_fill}{A numeric vector of values to be imputed.}
+\item{var_to_fill}{A numeric vector of values to fill.}
 
-\item{lod}{A numeric vector of the limit of detection (LOD), the same length as \code{var_to_fill}.}
+\item{lod}{A numeric vector of the limit of detection (LOD), should be of the
+same length as \code{var_to_fill}.}
 
-\item{loq}{A numeric vector of the limit of quantification (LOQ), the same length as \code{var_to_fill}. Defaults to NULL.}
+\item{loq}{A numeric vector of the limit of quantification (LOQ), should be of the
+same length as \code{var_to_fill}.}
 }
 \value{
-A numeric vector with imputed values replacing those below LOD.
+A numeric vector with the original values and where those are below
+LOD replaced by fill-in values below the limit of detection.
 }
 \description{
-This function imputes values below the Limit of Detection (LOD) using the
-fill-in method by Helsel (1990). It assumes a normal distribution of data.
+This function fills in data below LOD using the fill-in method by Helsel
+(1990). It is designed to work with data that should have a normal
+distribution.
 }
 \details{
-The function identifies censored values (below LOD or LOQ), estimates distribution parameters
-using \code{NADA::cenros}, and then replaces censored values with random samples from a
-truncated normal distribution.
+The function flags values that are to be imputed and computes
+distribution parameters using the \code{NADA::cenros}. It then computes
+fill-in values by performing a random sample between 0 and \code{lod} for a
+normal distribution with the previously computed parameters. Finally, the
+function replaces values below \code{lod} by fill-in values.
+}
+\examples{
+# Example dataset
+set.seed(113)
+values <- c(0.05, 0.1, 0.2, NA, 0.4, 0.5)
+lod <- rep(0.1, length(values))
+
+# Apply fill_in function
+imputed_values <- fill_in(values, lod)
+print(imputed_values)
 }
 \references{
 Helsel, D.R. (1990). Less Than Obvious - Statistical Treatment of
-Data Below the Detection Limit. Environmental Science & Technology, 24(12), 1766-1774.
+Data Below the Detection Limit. Environmental Science & Technology, 24(12),
+1766-1774.
 }

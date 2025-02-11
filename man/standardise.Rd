@@ -2,10 +2,10 @@
 % Please edit documentation in R/data_preprocessing_functions.R
 \name{standardise}
 \alias{standardise}
-\title{Standardize Data on Protocol Variables}
+\title{Apply Standardisation on Protocol Variables}
 \usage{
 standardise(
-  data = dplyr::pick(everything()),
+  data = pick(everything()),
   var_to_std,
   protocol_vars,
   covariates = NULL,
@@ -14,26 +14,64 @@ standardise(
 )
 }
 \arguments{
-\item{data}{A data frame in tidy format containing the data to standardize.}
+\item{data}{A data.frame in tidy format containing the data to standardise,
+i.e., one row per ID and per exposure.}
 
-\item{var_to_std}{A character string specifying the variable to standardize.}
+\item{var_to_std}{A character string representing the variable to standardise.
+This variable should be normally distributed.}
 
-\item{protocol_vars}{A character vector of potential protocol variables for standardization.}
+\item{protocol_vars}{A character vector representing potential protocol
+variables on which to standardise.}
 
-\item{covariates}{A character vector of model covariates. Defaults to NULL.}
+\item{covariates}{A character vector of names of model covariates.}
 
-\item{folder}{A character string specifying the folder where model outputs will be saved.}
+\item{folder}{A character string representing the folder where standardisation
+regression outputs will be saved}
 
-\item{group}{A character string indicating the grouping variable for exposure. Defaults to \code{dplyr::cur_group()}.}
+\item{group}{A character string representing the grouping variable for
+exposure. Defaults to the current grouping.}
 }
 \value{
-A numeric vector of standardized values.
+A numeric vector containing the corrected values after standardisation.
+The length of the returned vector is the same as the number of rows in
+the input data. Non-computable residuals are returned as \code{NA}.
 }
 \description{
-Standardizes exposure data based on selected protocol variables.
-This function is designed for use within a \code{mutate} call in grouped data.
+This function standardises the exposure data on selected protocol variables
+(either categorical or continuous) as per the sepages pipeline guide.
+The function is designed to be called within a \code{mutate} call on grouped data,
+where each group represents a different exposure.
 }
 \details{
-The function selects relevant protocol variables (p < 0.2), builds a model,
-extracts residuals, and standardizes values accordingly.
+The function selects the final protocol variables on which to standardise
+based on p < 0.2. It constructs a formula, computes model residuals,
+sets reference values for prediction, computes standardised values, and
+finally returns a vector with corrected values and NA for non-computable
+residuals, maintaining the length same as input data.
+}
+\examples{
+# Example dataset
+set.seed(113)
+data <- data.frame(
+  exposure = rnorm(100, mean = 5, sd = 2),
+  protocol_var1 = sample(c("A", "B", "C"), 100, replace = TRUE),
+  protocol_var2 = runif(100, 0, 1),
+  age = rnorm(100, mean = 35, sd = 10)
+)
+
+# Apply standardisation function
+standardised_values <- data |>
+  mutate(
+    exposure_std = standardise(
+      var_to_std = "exposure",
+      protocol_vars = c("protocol_var1", "protocol_var2"),
+      covariates = "age",
+      folder = "outputs/"
+    )
+  )
+
+head(standardised_values)
+}
+\seealso{
+\code{\link[dplyr]{mutate}}, \code{\link[stats]{lm}}, \code{\link[stats]{predict}}, \code{\link[stats]{residuals}}
 }
