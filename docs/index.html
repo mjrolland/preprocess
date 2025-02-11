@@ -58,12 +58,12 @@
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <p>You can install this package from GitHub using <code>devtools</code>:</p>
-<p><code>{r} devtools::install_github("mjrolland/preprocess")</code></p>
+<pre><code><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"mjrolland/preprocess"</span><span class="op">)</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
 </h2>
-<p><code>{r} library(preprocess)</code></p>
+<pre><code><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">preprocess</span><span class="op">)</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="functions">Functions<a class="anchor" aria-label="anchor" href="#functions"></a>
@@ -81,37 +81,40 @@
 <div class="section level3">
 <h3 id="filling-in-values-below-lod">Filling in Values Below LOD<a class="anchor" aria-label="anchor" href="#filling-in-values-below-lod"></a>
 </h3>
-<p>```{r} # Example data data &lt;- c(1, 2, 0.5, 3, 0.2, 0.8) lod &lt;- c(NA, NA, 1, NA, 1, 1)</p>
+<pre><code><span></span>
+<span><span class="co"># Example data</span></span>
+<span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">0.5</span>, <span class="fl">3</span>, <span class="fl">0.2</span>, <span class="fl">0.8</span><span class="op">)</span></span>
+<span><span class="va">lod</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="cn">NA</span>, <span class="fl">1</span>, <span class="cn">NA</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Apply fill-in method</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fill_in.html">fill_in</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">lod</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></code></pre>
+</div>
+<div class="section level3">
+<h3 id="standardizing-exposure-data">Standardizing Exposure Data<a class="anchor" aria-label="anchor" href="#standardizing-exposure-data"></a>
+</h3>
+<pre><code><span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">preprocess</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Simulated dataset</span></span>
+<span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">100</span>,</span>
+<span>  exp1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">100</span>, mean <span class="op">=</span> <span class="fl">3</span>, sd <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>,</span>
+<span>  batch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="fl">100</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  prot1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">100</span>, mean <span class="op">=</span> <span class="fl">0</span>, sd <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Standardize the data</span></span>
+<span><span class="va">df_standardized</span> <span class="op">&lt;-</span> <span class="va">df</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">batch</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>    exp1_std <span class="op">=</span> <span class="fu"><a href="reference/standardise.html">standardise</a></span><span class="op">(</span><span class="va">.</span>, var_to_std <span class="op">=</span> <span class="st">"exp1"</span>, protocol_vars <span class="op">=</span> <span class="st">"prot1"</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">df_standardized</span><span class="op">)</span></span></code></pre>
 </div>
 </div>
-</div>
-<div class="section level1">
-<h1 id="apply-fill-in-method">Apply fill-in method<a class="anchor" aria-label="anchor" href="#apply-fill-in-method"></a>
-</h1>
-<p>result &lt;- fill_in(data, lod) print(result)</p>
-<pre><code>
-### Standardizing Exposure Data
-
-```{r}
-library(preprocess)
-library(dplyr)
-
-# Simulated dataset
-df &lt;- data.frame(
-  id = 1:100,
-  exp1 = rnorm(100, mean = 3, sd = 1),
-  batch = factor(sample(1:5, 100, replace = TRUE)),
-  prot1 = rnorm(100, mean = 0, sd = 0.3)
-)
-
-# Standardize the data
-df_standardized &lt;- df |&gt;
-  group_by(batch) |&gt;
-  mutate(
-    exp1_std = standardise(., var_to_std = "exp1", protocol_vars = "prot1")
-  )
-
-head(df_standardized)</code></pre>
 <div class="section level2">
 <h2 id="contributing">Contributing<a class="anchor" aria-label="anchor" href="#contributing"></a>
 </h2>
@@ -123,7 +126,6 @@ head(df_standardized)</code></pre>
 <p>This package is licensed under the MIT License.</p>
 </div>
 </div>
-
   </main><aside class="col-md-3"><div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
