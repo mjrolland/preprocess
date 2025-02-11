@@ -6,13 +6,13 @@ An R package for preprocessing environmental datasets.
 
 You can install this package from GitHub using `devtools`:
 
-```{r}
+```
 devtools::install_github("mjrolland/preprocess")
 ```
 
 ## Usage
 
-```{r}
+```
 library(preprocess)
 ```
 
@@ -25,7 +25,8 @@ library(preprocess)
 
 ### Filling in Values Below LOD
 
-```{r}
+```
+
 # Example data
 data <- c(1, 2, 0.5, 3, 0.2, 0.8)
 lod <- c(NA, NA, 1, NA, 1, 1)
@@ -33,11 +34,13 @@ lod <- c(NA, NA, 1, NA, 1, 1)
 # Apply fill-in method
 result <- fill_in(data, lod)
 print(result)
+
 ```
 
 ### Standardizing Exposure Data
 
-```{r}
+```
+
 library(preprocess)
 library(dplyr)
 
@@ -57,6 +60,7 @@ df_standardized <- df |>
   )
 
 head(df_standardized)
+
 ```
 
 ## Contributing
