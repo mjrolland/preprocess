@@ -132,6 +132,7 @@ fill_in <- function(var_to_fill, lod, loq = NULL){
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' # Example dataset
 #' set.seed(113)
 #' data <- data.frame(
@@ -143,7 +144,7 @@ fill_in <- function(var_to_fill, lod, loq = NULL){
 #'
 #' # Apply standardisation function
 #' standardised_values <- data |>
-#'   mutate(
+#'   dplyr::mutate(
 #'     exposure_std = standardise(
 #'       var_to_std = "exposure",
 #'       protocol_vars = c("protocol_var1", "protocol_var2"),
@@ -153,9 +154,10 @@ fill_in <- function(var_to_fill, lod, loq = NULL){
 #'   )
 #'
 #' head(standardised_values)
+#' }
 
 standardise <- function(
-    data = pick(everything()),
+    data = dplyr::pick(everything()),
     var_to_std,
     protocol_vars,
     covariates = NULL,
@@ -193,34 +195,34 @@ standardise <- function(
 
       # get beta
       beta_i <- betas |>
-        filter(variable == prot_var) |>
-        pull(estimate)
+        dplyr::filter(variable == prot_var) |>
+        dplyr::pull(estimate)
 
       # prepare correction factor
       data <- data |>
         mutate(
-          !!str_c("correct_", prot_var) := beta_i * (.data[[prot_var]] - median(data[[prot_var]], na.rm = TRUE))
+          !!stringr::str_c("correct_", prot_var) := beta_i * (.data[[prot_var]] - median(data[[prot_var]], na.rm = TRUE))
         )
 
     }else if(class_i == "factor"){
 
       # get betas and prepare correction factor (==beta)
       beta_i <- betas |>
-        filter(variable == prot_var) |>
-        select(estimate, level) |>
-        rename(
+        dplyr::filter(variable == prot_var) |>
+        dplyr::select(estimate, level) |>
+        dplyr::rename(
           !!prot_var := level,
-          !!str_c("correct_", prot_var) := estimate
+          !!stringr::str_c("correct_", prot_var) := estimate
         )
 
       # add betas to data frame
       data <- data |>
-        left_join(beta_i, by = prot_var)
+        dplyr::left_join(beta_i, by = prot_var)
 
     }else{
 
       stop(
-        str_c(
+        stringr::str_c(
           "Protocol variables need to be coded as continuous or factor, not: ",
           class_i, "(variable ", prot_var, ")"
         )
@@ -231,8 +233,8 @@ standardise <- function(
 
   # standardise
   data <- data |>
-    mutate(
-      val_std = .data[[var_to_std]] - rowSums(pick(starts_with("correct")), na.rm = TRUE)
+    dplyr::mutate(
+      val_std = .data[[var_to_std]] - rowSums(dplyr::pick(starts_with("correct")), na.rm = TRUE)
     )
 
   # Return the vector of standardised values
@@ -258,7 +260,7 @@ standardise <- function(
 #'
 get_protocol_var <- function(data, var_to_std, protocol_vars, covariates, folder, group){
   # Construct linear model formula
-  model_formula <- str_c(
+  model_formula <- stringr::str_c(
     var_to_std,
     "~",
     paste(protocol_vars, collapse = "+"),
@@ -273,23 +275,23 @@ get_protocol_var <- function(data, var_to_std, protocol_vars, covariates, folder
   betas <- broom::tidy(lm_full)
 
   # export
-  filename <- str_c(paste(group, collapse = "_"), ".csv")
-  write_csv(betas, file.path(folder, filename))
+  filename <- stringr::str_c(paste(group, collapse = "_"), ".csv")
+  readr::write_csv(betas, file.path(folder, filename))
 
   # Perform ANOVA and get p-values
   aov_output <- car::Anova(lm_full)
 
   # export anova output
-  filename <- str_c(paste(group, collapse = "_"), "_aov.csv")
-  write_csv(broom::tidy(aov_output), file.path(folder, filename))
+  filename <- stringr::str_c(paste(group, collapse = "_"), "_aov.csv")
+  readr::write_csv(broom::tidy(aov_output), file.path(folder, filename))
 
   # Identify and return protocol variables with p < 0.2
   final_std_vars <- aov_output |>
     as.data.frame() |>
-    rownames_to_column(var = "term") |>
-    rename(p = "Pr(>F)") |>
-    filter(term %in% protocol_vars & p < 0.2) |>
-    pull(term)
+    tibble::rownames_to_column(var = "term") |>
+    dplyr::rename(p = "Pr(>F)") |>
+    dplyr::filter(term %in% protocol_vars & p < 0.2) |>
+    dplyr::pull(term)
 
   return(final_std_vars)
 }

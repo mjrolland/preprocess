@@ -1,29 +1,43 @@
 ---
 title: "Introduction to preprocess"
-author: "Matthieu Rolland"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Introduction to preprocess}
+  %\VignetteIndexEntry{preprocess-intro}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-bibliography: biblio.bib
-csl: https://www.zotero.org/styles/nature
-execute: 
-  warning: false
-number-sections: true
 ---
 
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
 
-```{r, echo=FALSE, warning=FALSE, error=FALSE}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+```
+
+
+
+```{r, warning=FALSE, error=FALSE}
 # packages
-library(tidyverse) # manipulate data, data viz
-library(rio)       # import data
-library(scales)    # helper 
-library(gt)        # print table with formattig
-library(NADA)      # compute distribution parameters on censored data
-library(msm)       # random draw in truncated normal distribution
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(stringr)
+library(readr)
+library(tibble)
 library(preprocess)
 ```
+
+```{r, warning=FALSE, error=FALSE, echo=FALSE}
+library(scales)    # helper 
+library(gt)        # print table with formattig
+library(rio)
+```
+
 
 # Introduction
 
@@ -131,7 +145,7 @@ tbl
 
 Exposure level distribution:
 
-```{r echo=FALSE, fig.height=5}
+```{r echo=FALSE, fig.height=5, fig.width=7}
 ggplot(dt_exp_long, aes(x = val_num)) +
   geom_histogram() +
   facet_wrap(~exp, scales = "free") +
@@ -177,7 +191,7 @@ dt_imp <- dt_exp_long |>
 
 Then systematically visualise the imputations to make sure everything went as expected: 
 
-```{r echo=FALSE, fig.height=3}
+```{r echo=FALSE, fig.height=3, fig.width=7}
 dt_imp |>
   mutate(
     color = case_when(
@@ -208,7 +222,7 @@ We start by describing the data.
 
 We can observe the batch effect for `exp1` and `exp4`:
 
-```{r echo=FALSE, fig.height=3, fig.width=5}
+```{r echo=FALSE, fig.height=3, fig.width=6}
 ggplot(dt_imp, aes(x = factor(batch), y = log10_val_i)) +
   geom_boxplot() +
   facet_wrap(~exp) +
@@ -221,7 +235,7 @@ ggplot(dt_imp, aes(x = factor(batch), y = log10_val_i)) +
 
 And we can observe the effect of season for `exp4`:
 
-```{r fig.height=3, fig.width=5}
+```{r fig.height=3, fig.width=6}
 ggplot(dt_imp, aes(x = factor(season), y = log10_val_i)) +
   geom_boxplot() +
   facet_wrap(~exp) +
@@ -253,7 +267,7 @@ This justifies the inclusion of `season` as a covariate in the standardisation m
 
 We can also observe the association between `exp2` and `prot1`:
 
-```{r echo=FALSE, fig.height=3}
+```{r echo=FALSE, fig.height=3, fig.width=7}
 ggplot(dt_imp, aes(x = prot1, y = log10_val_i)) +
   geom_point() +
   geom_smooth(method = "lm") +
@@ -363,7 +377,7 @@ We see that the correct variables were detected.
 
 We can see the correction for the batch effect of `exp1` and `exp4`:
 
-```{r echo=FALSE, fig.height=3, fig.width=5}
+```{r echo=FALSE, fig.height=3, fig.width=6}
 ggplot(dt_std, aes(x = factor(batch), y = log10_val_i_std)) +
   geom_boxplot() +
   facet_wrap(~exp) +
@@ -378,7 +392,7 @@ We can note that there is still residual variability between batches for `exp4`,
 
 And the correction of `exp2` for `prot1`:
 
-```{r echo=FALSE, fig.height=3}
+```{r echo=FALSE, fig.height=3, fig.width=7}
 ggplot(dt_std, aes(x = prot1, y = log10_val_i_std)) +
   geom_point() +
   geom_smooth(method = "lm") +

@@ -5,7 +5,7 @@
 \title{Apply Standardisation on Protocol Variables}
 \usage{
 standardise(
-  data = pick(everything()),
+  data = dplyr::pick(everything()),
   var_to_std,
   protocol_vars,
   covariates = NULL,
@@ -50,6 +50,7 @@ finally returns a vector with corrected values and NA for non-computable
 residuals, maintaining the length same as input data.
 }
 \examples{
+\dontrun{
 # Example dataset
 set.seed(113)
 data <- data.frame(
@@ -61,7 +62,7 @@ data <- data.frame(
 
 # Apply standardisation function
 standardised_values <- data |>
-  mutate(
+  dplyr::mutate(
     exposure_std = standardise(
       var_to_std = "exposure",
       protocol_vars = c("protocol_var1", "protocol_var2"),
@@ -71,6 +72,7 @@ standardised_values <- data |>
   )
 
 head(standardised_values)
+}
 }
 \seealso{
 \code{\link[dplyr]{mutate}}, \code{\link[stats]{lm}}, \code{\link[stats]{predict}}, \code{\link[stats]{residuals}}
