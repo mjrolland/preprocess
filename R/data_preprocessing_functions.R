@@ -47,16 +47,16 @@ fill_in <- function(var_to_fill, lod, loq = NULL){
   # flag values to impute
   censored <- var_to_fill < max_lim
 
+  # compute distribution parameters
+  stats_ros <- NADA::cenros(var_to_fill, censored, forwardT = NULL) #"forwardT = NULL": no log transform
+  dist_mean <- NADA::mean(stats_ros)
+  dist_sd <- NADA::sd(stats_ros)
+
   # set NA to FALSE as index cannot be NA
   censored[is.na(censored)] <- FALSE
 
   # count number of values to be imputed
   n_impute <- sum(censored)
-
-  # compute distribution parameters
-  stats_ros <- NADA::cenros(var_to_fill, censored, forwardT = NULL) #"forwardT = NULL": no log transform
-  dist_mean <- NADA::mean(stats_ros)
-  dist_sd <- NADA::sd(stats_ros)
 
   # if data between lod and loq is to be imputed
   if(!is.null(loq)){
