@@ -41,29 +41,31 @@
 #' imputed_values <- fill_in(values, lod)
 #' print(imputed_values)
 fill_in <- function(var_to_fill, lod, loq = NULL){
-  # define max lim
+  # Define maximum censoring limit (LOQ if provided, otherwise LOD)
   max_lim <- ifelse(!is.null(loq), loq, lod)
 
-  # flag values to impute
+  # Identify censored observations (below maximum limit)
   censored <- var_to_fill < max_lim
 
-  # compute distribution parameters
-  stats_ros <- NADA::cenros(var_to_fill, censored, forwardT = NULL) #"forwardT = NULL": no log transform
+  # Estimate distribution parameters using censored regression on order statistics (ROS)
+  stats_ros <- NADA::cenros(var_to_fill, censored, forwardT = NULL)
   dist_mean <- NADA::mean(stats_ros)
   dist_sd <- NADA::sd(stats_ros)
 
-  # set NA to FALSE as index cannot be NA
+  # Set censored NA values to FALSE (no imputation needed)
   censored[is.na(censored)] <- FALSE
 
-  # count number of values to be imputed
+  # Count number of censored observations below LOD
   n_impute <- sum(censored)
 
-  # if data between lod and loq is to be imputed
-  if(!is.null(loq)){
-    n_impute_loq <- sum(between(var_to_fill, lod, loq), na.rm = TRUE)
-    censored_loq <- between(var_to_fill, lod, loq)
+  # If LOQ provided, handle additional censoring between LOD and LOQ
+  if (!is.null(loq)) {
+    # Identify values between LOD and LOQ
+    censored_loq <- var_to_fill > lod & var_to_fill < loq
     censored_loq[is.na(censored_loq)] <- FALSE
+    n_impute_loq <- sum(censored_loq)
 
+    # Generate fill-in values between LOD and LOQ from truncated normal distribution
     fill_in_values_loq <- msm::rtnorm(
       n = n_impute_loq,
       mean = dist_mean,
@@ -72,12 +74,12 @@ fill_in <- function(var_to_fill, lod, loq = NULL){
       upper = loq
     )
 
-    # discount varioables between lod and loq imputation of data below LOD
+    # Update censoring status to exclude those already imputed between LOD and LOQ
     censored <- ifelse(censored_loq, FALSE, censored)
-    n_impute <- n_impute - n_impute_loq
+    n_impute <- sum(censored)
   }
 
-  # fill in data below lod
+  # Generate fill-in values below LOD from truncated normal distribution
   fill_in_values <- msm::rtnorm(
     n = n_impute,
     mean = dist_mean,
@@ -86,10 +88,14 @@ fill_in <- function(var_to_fill, lod, loq = NULL){
     upper = lod
   )
 
-  # replace values below LOD by fill in values
+  # Replace censored values with generated fill-in values
   vec_filled_in <- var_to_fill
   vec_filled_in[censored] <- fill_in_values
-  if(!is.null(loq)){vec_filled_in[censored_loq] <- fill_in_values_loq}
+
+  # If LOQ was provided, replace censored values between LOD and LOQ
+  if (!is.null(loq)) {
+    vec_filled_in[censored_loq] <- fill_in_values_loq
+  }
 
   return(vec_filled_in)
 }
