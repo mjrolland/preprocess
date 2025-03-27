@@ -48,7 +48,7 @@ mk_tbl_std <- function(path, lst_prot_vars){
     df <- import(file)
 
     # Extract the exposure name from the filename
-    exp <- file |> str_remove(path) |> str_remove("_aov.csv")
+    exp <- file |> str_remove(path) |> str_remove("_aov.csv") |> str_remove("/")
 
     # Filter variables with p < 0.2 (excluding "Residuals")
     prot_vars <- df |>
