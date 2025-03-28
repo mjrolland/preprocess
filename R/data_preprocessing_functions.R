@@ -61,7 +61,7 @@ fill_in <- function(var_to_fill, lod, loq = NULL){
   # If LOQ provided, handle additional censoring between LOD and LOQ
   if (!is.null(loq)) {
     # Identify values between LOD and LOQ
-    censored_loq <- var_to_fill > lod & var_to_fill < loq
+    censored_loq <- var_to_fill >= lod & var_to_fill < loq
     censored_loq[is.na(censored_loq)] <- FALSE
     n_impute_loq <- sum(censored_loq)
 
