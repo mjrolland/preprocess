@@ -281,15 +281,15 @@ get_protocol_var <- function(data, var_to_std, protocol_vars, covariates, folder
   betas <- broom::tidy(lm_full)
 
   # export
-  filename <- stringr::str_c(paste(group, collapse = "_"), ".csv")
-  readr::write_csv(betas, file.path(folder, filename))
+  filename <- stringr::str_c(paste(group, collapse = "_"), ".xlsx")
+  rio::export(betas, file.path(folder, filename))
 
   # Perform ANOVA and get p-values
   aov_output <- car::Anova(lm_full)
 
   # export anova output
-  filename <- stringr::str_c(paste(group, collapse = "_"), "_aov.csv")
-  readr::write_csv(broom::tidy(aov_output), file.path(folder, filename))
+  filename <- stringr::str_c(paste(group, collapse = "_"), "_aov.xlsx")
+  rio::export(broom::tidy(aov_output), file.path(folder, filename))
 
   # Identify and return protocol variables with p < 0.2
   final_std_vars <- aov_output |>
