@@ -278,7 +278,7 @@ get_protocol_var <- function(data, var_to_std, protocol_vars, covariates, folder
   lm_full <- lm(as.formula(model_formula), data = data)
 
   # Extract betas from the model and export to CSV
-  betas <- broom::tidy(lm_full)
+  betas <- broom::tidy(lm_full, conf.int = TRUE)
 
   # export
   filename <- stringr::str_c(paste(group, collapse = "_"), ".xlsx")
