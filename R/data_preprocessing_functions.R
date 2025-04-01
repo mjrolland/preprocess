@@ -168,10 +168,12 @@ standardise <- function(
     protocol_vars,
     covariates = NULL,
     folder,
-    group = dplyr::cur_group()
+    group = dplyr::cur_group(),
+    force = NULL
 ){
   # Select protocol variables for standardisation (p < 0.2)
   final_std_vars <- get_protocol_var(data, var_to_std, protocol_vars, covariates, folder, group)
+  if(!is.null(force)){final_std_vars = c(final_std_vars, force)}
 
   # Construct model formula with final protocol variables (p < 0.2)
   form <- stringr::str_c(

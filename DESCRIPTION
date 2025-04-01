@@ -1,6 +1,6 @@
 Package: preprocess
 Title: Preprocessing Functions for Environmental Data
-Version: 0.6.5
+Version: 0.6.6
 Authors@R: person("Matthieu", "Rolland", email = "mj.rolland@gmail.com", role = c("aut", "cre"))
 Description: This package provides functions to preprocess environmental datasets, including standardization and fill-in methods for handling below-LOD values.
 License: MIT + file LICENSE
