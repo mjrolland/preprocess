@@ -30,10 +30,10 @@
 #' }
 mk_tbl_std <- function(path, lst_prot_vars){
   # List all files in the folder
-  files <- list.files(path, full.names = TRUE, pattern = "_aov\\.csv$")  # Adjust pattern if needed
+  files <- list.files(path, full.names = TRUE, pattern = "_aov\\.xlsx$")  # Adjust pattern if needed
 
   lst_exp <- str_remove_all(files, path) |>
-    str_remove("_aov.csv") |>
+    str_remove("_aov.xlsx") |>
     str_remove_all("/")
 
   # Initialize an empty list to store results
@@ -49,7 +49,7 @@ mk_tbl_std <- function(path, lst_prot_vars){
     df <- import(file)
 
     # Extract the exposure name from the filename
-    exp <- file |> str_remove(path) |> str_remove("_aov.csv") |> str_remove_all("/")
+    exp <- file |> str_remove(path) |> str_remove("_aov.xlsx") |> str_remove_all("/")
 
     # Filter variables with p < 0.2 (excluding "Residuals")
     prot_vars <- df |>
