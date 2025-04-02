@@ -285,6 +285,10 @@ get_protocol_var <- function(data, var_to_std, protocol_vars, covariates, folder
   # export
   filename <- stringr::str_c(paste(group, collapse = "_"), ".xlsx")
   rio::export(betas, file.path(folder, filename))
+  filename <- stringr::str_c(paste(group, collapse = "_"), ".png")
+  lm_full |>
+    performance::check_model() |>
+    ggsave(file.path(folder, filename), height = 10, width = 8)
 
   # Perform ANOVA and get p-values
   aov_output <- car::Anova(lm_full)
