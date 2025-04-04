@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">preprocess</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.8</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -81,8 +81,15 @@
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
 <p>This vignette demonstrates the use of simulated datasets to
-illustrate the application of the fill_in and standardise functions for
-preprocessing environmental exposure data.</p>
+illustrate the application of the <code>fill_in</code> and
+<code>standardise</code> functions for preprocessing environmental
+exposure data.</p>
+<p>⚠️ <strong>Important</strong>: The <code>fill_in</code> function
+assumes that the variable to impute is normally distributed. It is the
+user’s responsibility to apply the appropriate transformation (e.g.,
+log-transformation) to ensure normality prior to using this function.
+The same transformation must be applied to the Limit of Detection (LOD)
+to ensure consistency.</p>
 <p>Specifically, it covers how to:</p>
 <ul>
 <li>Handle values below the Limit of Detection (LOD) using the method
@@ -705,8 +712,16 @@ could be more groups on which we would like to apply the fill-in
 procedure separately like exposure <em>and</em> sample period, in which
 case the <code>.by</code> argument of the <code>mutate</code> call would
 be modified to <code>.by = c(exp, period)</code>.</p>
-<p>Also note that data needs to be normally distributed, and if the data
-is log transformed, the LOD also needs to be log transformed.</p>
+<p><strong>Important</strong>: The <code>fill_in</code> function uses
+the method of Helsel (1990), which assumes that the variable to be
+imputed follows a <strong>normal distribution</strong>. In environmental
+epidemiology, exposure variables are often log-normally distributed.
+Therefore, the user <strong>must apply a log-transformation</strong> (or
+another appropriate transformation) to the variable
+<strong>before</strong> calling <code>fill_in</code>, and <strong>must
+apply the same transformation to the LOD</strong>.</p>
+<p>The function does not perform any transformation by itself and relies
+on the user to ensure distributional assumptions are met.</p>
 <p>Fill in is done like this:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Impute data below LOD </span></span>
