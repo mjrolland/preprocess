@@ -122,28 +122,29 @@ fill_in <- function(var_to_fill, lod, loq = NULL){
 #'   Defaults to the current grouping (via `dplyr::cur_group()`).
 #' @param force A character vector of protocol variables to forcibly include in
 #'   the model regardless of statistical significance. Default is `NULL`.
+#' @param export_check_model Logical. If `TRUE`, exports model diagnostic plots
+#'   from `performance::check_model()`. Default is `FALSE`.
 #'
 #' @details
-#' The function selects protocol variables with p < 0.2 in ANOVA to adjust for
-#' protocol effects. It constructs a model, extracts residuals, and adjusts
-#' exposures by subtracting estimated effects. Forced variables are included
-#' even if not statistically significant. The resulting corrected variable is
-#' returned as a numeric vector.
+#' The function selects protocol variables with p-value < 0.2 in ANOVA to adjust
+#' for protocol effects. A linear model is fitted including selected protocol
+#' variables and covariates. Residual-based corrections are computed and applied
+#' to the exposure variable. If no protocol variable is selected, the original
+#' variable is returned unmodified. Forced variables are always included.
 #'
 #' @return
 #' A numeric vector of corrected values after standardisation. Length matches
-#' number of rows in `data`; values for which residuals are not computable are
-#' returned as `NA`.
+#' the number of rows in `data`; values for which residuals cannot be computed
+#' are returned as `NA`.
 #'
 #' @seealso
-#' \code{\link[dplyr]{mutate}}, \code{\link[stats]{lm}}, \code{\link[stats]{predict}}, \code{\link[stats]{residuals}}
+#' \code{\link[dplyr]{mutate}}, \code{\link[stats]{lm}}, \code{\link[stats]{predict}},
+#' \code{\link[performance]{check_model}}, \code{\link[car]{Anova}}
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # Example dataset
-#' set.seed(113)
 #' data <- data.frame(
 #'   exposure = rnorm(100, mean = 5, sd = 2),
 #'   protocol_var1 = sample(c("A", "B", "C"), 100, replace = TRUE),
@@ -151,18 +152,16 @@ fill_in <- function(var_to_fill, lod, loq = NULL){
 #'   age = rnorm(100, mean = 35, sd = 10)
 #' )
 #'
-#' # Apply standardisation function
-#' standardised_values <- data |>
+#' data |>
 #'   dplyr::mutate(
 #'     exposure_std = standardise(
 #'       var_to_std = "exposure",
 #'       protocol_vars = c("protocol_var1", "protocol_var2"),
 #'       covariates = "age",
-#'       folder = "outputs/"
+#'       folder = "outputs/",
+#'       export_check_model = TRUE
 #'     )
 #'   )
-#'
-#' head(standardised_values)
 #' }
 
 standardise <- function(
@@ -172,10 +171,11 @@ standardise <- function(
     covariates = NULL,
     folder,
     group = dplyr::cur_group(),
-    force = NULL
+    force = NULL,
+    export_check_model = FALSE
 ){
   # Select protocol variables for standardisation (p < 0.2)
-  final_std_vars <- get_protocol_var(data, var_to_std, protocol_vars, covariates, folder, group)
+  final_std_vars <- get_protocol_var(data, var_to_std, protocol_vars, covariates, folder, group, export_check_model)
   if(!is.null(force)){final_std_vars = c(final_std_vars, force)}
 
   # --> EXIT EARLY IF NOTHING TO ADJUST FOR
@@ -253,22 +253,35 @@ standardise <- function(
 
 #' Get Protocol Variables for Standardisation
 #'
-#' This function identifies which among the potential protocol variables should
-#' be used for standardising a given exposure. It exports outputs for the
-#' different steps of the process.
+#' This function identifies which among the candidate protocol variables are
+#' significantly associated with the exposure to be standardised. The selection
+#' is based on ANOVA p-values (< 0.2). Model outputs are exported to files for
+#' transparency and quality control.
 #'
-#' @param data A data frame containing the exposure and protocol variables.
-#' @param var_to_std A character string with the name of the variable to be
+#' @param data A data.frame containing the exposure, protocol variables, and
+#'   optional covariates.
+#' @param var_to_std A character string giving the name of the variable to be
 #'   standardised.
 #' @param protocol_vars A character vector of names of potential protocol
 #'   variables.
-#' @param covariates A character vector of names of model covariates.
-#' @param folder The directory folder where the output CSV files will be saved.
-#' @param group The group/exposure under consideration.
-#' @return A character vector containing the names of the final protocol
-#'   variables to be used for standardisation.
+#' @param covariates A character vector of additional covariates to include in
+#'   the model (not corrected for).
+#' @param folder A character string giving the directory where outputs (model
+#'   summary, ANOVA table, optional model check) will be saved.
+#' @param group A character string or vector used for naming the output files
+#'   (typically the exposure variable name).
+#' @param export_check_model Logical. If `TRUE`, exports model diagnostic plots
+#'   from `performance::check_model()`. Default is `FALSE`.
 #'
-get_protocol_var <- function(data, var_to_std, protocol_vars, covariates, folder, group){
+#' @return A character vector containing the names of the protocol variables
+#'   with p-value < 0.2, to be used for standardisation.
+#'
+#' @seealso \code{\link[car]{Anova}}, \code{\link[broom]{tidy}},
+#' \code{\link[performance]{check_model}}, \code{\link[rio]{export}}
+#'
+#' @export
+
+get_protocol_var <- function(data, var_to_std, protocol_vars, covariates, folder, group, export_check_model){
   # Construct linear model formula
   model_formula <- stringr::str_c(
     var_to_std,
@@ -287,9 +300,11 @@ get_protocol_var <- function(data, var_to_std, protocol_vars, covariates, folder
   # export
   filename <- stringr::str_c(paste(group, collapse = "_"), ".xlsx")
   rio::export(betas, file.path(folder, filename))
-  filename <- stringr::str_c(paste(group, collapse = "_"), ".png")
-  p <- invisible(plot(performance::check_model(lm_full)))
-  ggsave(p, filename = file.path(folder, filename), height = 10, width = 8)
+  if(export_check_model){
+    filename <- stringr::str_c(paste(group, collapse = "_"), ".png")
+    p <- invisible(plot(performance::check_model(lm_full)))
+    ggsave(p, filename = file.path(folder, filename), height = 10, width = 8)
+  }
 
   # Perform ANOVA and get p-values
   aov_output <- car::Anova(lm_full)

@@ -4,29 +4,49 @@
 \alias{get_protocol_var}
 \title{Get Protocol Variables for Standardisation}
 \usage{
-get_protocol_var(data, var_to_std, protocol_vars, covariates, folder, group)
+get_protocol_var(
+  data,
+  var_to_std,
+  protocol_vars,
+  covariates,
+  folder,
+  group,
+  export_check_model
+)
 }
 \arguments{
-\item{data}{A data frame containing the exposure and protocol variables.}
+\item{data}{A data.frame containing the exposure, protocol variables, and
+optional covariates.}
 
-\item{var_to_std}{A character string with the name of the variable to be
+\item{var_to_std}{A character string giving the name of the variable to be
 standardised.}
 
 \item{protocol_vars}{A character vector of names of potential protocol
 variables.}
 
-\item{covariates}{A character vector of names of model covariates.}
+\item{covariates}{A character vector of additional covariates to include in
+the model (not corrected for).}
 
-\item{folder}{The directory folder where the output CSV files will be saved.}
+\item{folder}{A character string giving the directory where outputs (model
+summary, ANOVA table, optional model check) will be saved.}
 
-\item{group}{The group/exposure under consideration.}
+\item{group}{A character string or vector used for naming the output files
+(typically the exposure variable name).}
+
+\item{export_check_model}{Logical. If \code{TRUE}, exports model diagnostic plots
+from \code{performance::check_model()}. Default is \code{FALSE}.}
 }
 \value{
-A character vector containing the names of the final protocol
-variables to be used for standardisation.
+A character vector containing the names of the protocol variables
+with p-value < 0.2, to be used for standardisation.
 }
 \description{
-This function identifies which among the potential protocol variables should
-be used for standardising a given exposure. It exports outputs for the
-different steps of the process.
+This function identifies which among the candidate protocol variables are
+significantly associated with the exposure to be standardised. The selection
+is based on ANOVA p-values (< 0.2). Model outputs are exported to files for
+transparency and quality control.
+}
+\seealso{
+\code{\link[car]{Anova}}, \code{\link[broom]{tidy}},
+\code{\link[performance]{check_model}}, \code{\link[rio]{export}}
 }

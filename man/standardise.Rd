@@ -11,7 +11,8 @@ standardise(
   covariates = NULL,
   folder,
   group = dplyr::cur_group(),
-  force = NULL
+  force = NULL,
+  export_check_model = FALSE
 )
 }
 \arguments{
@@ -35,11 +36,14 @@ Defaults to the current grouping (via \code{dplyr::cur_group()}).}
 
 \item{force}{A character vector of protocol variables to forcibly include in
 the model regardless of statistical significance. Default is \code{NULL}.}
+
+\item{export_check_model}{Logical. If \code{TRUE}, exports model diagnostic plots
+from \code{performance::check_model()}. Default is \code{FALSE}.}
 }
 \value{
 A numeric vector of corrected values after standardisation. Length matches
-number of rows in \code{data}; values for which residuals are not computable are
-returned as \code{NA}.
+the number of rows in \code{data}; values for which residuals cannot be computed
+are returned as \code{NA}.
 }
 \description{
 This function standardises the exposure data on selected protocol variables
@@ -48,16 +52,14 @@ The function is designed to be called within a \code{mutate} call on grouped dat
 where each group represents a different exposure.
 }
 \details{
-The function selects protocol variables with p < 0.2 in ANOVA to adjust for
-protocol effects. It constructs a model, extracts residuals, and adjusts
-exposures by subtracting estimated effects. Forced variables are included
-even if not statistically significant. The resulting corrected variable is
-returned as a numeric vector.
+The function selects protocol variables with p-value < 0.2 in ANOVA to adjust
+for protocol effects. A linear model is fitted including selected protocol
+variables and covariates. Residual-based corrections are computed and applied
+to the exposure variable. If no protocol variable is selected, the original
+variable is returned unmodified. Forced variables are always included.
 }
 \examples{
 \dontrun{
-# Example dataset
-set.seed(113)
 data <- data.frame(
   exposure = rnorm(100, mean = 5, sd = 2),
   protocol_var1 = sample(c("A", "B", "C"), 100, replace = TRUE),
@@ -65,20 +67,19 @@ data <- data.frame(
   age = rnorm(100, mean = 35, sd = 10)
 )
 
-# Apply standardisation function
-standardised_values <- data |>
+data |>
   dplyr::mutate(
     exposure_std = standardise(
       var_to_std = "exposure",
       protocol_vars = c("protocol_var1", "protocol_var2"),
       covariates = "age",
-      folder = "outputs/"
+      folder = "outputs/",
+      export_check_model = TRUE
     )
   )
-
-head(standardised_values)
 }
 }
 \seealso{
-\code{\link[dplyr]{mutate}}, \code{\link[stats]{lm}}, \code{\link[stats]{predict}}, \code{\link[stats]{residuals}}
+\code{\link[dplyr]{mutate}}, \code{\link[stats]{lm}}, \code{\link[stats]{predict}},
+\code{\link[performance]{check_model}}, \code{\link[car]{Anova}}
 }

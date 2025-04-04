@@ -56,7 +56,8 @@ where each group represents a different exposure.</p>
 <span>  covariates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">folder</span>,</span>
 <span>  group <span class="op">=</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">cur_group</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  force <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  force <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  export_check_model <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -98,31 +99,35 @@ Defaults to the current grouping (via <code><a href="https://dplyr.tidyverse.org
 <dd><p>A character vector of protocol variables to forcibly include in
 the model regardless of statistical significance. Default is <code>NULL</code>.</p></dd>
 
+
+<dt id="arg-export-check-model">export_check_model<a class="anchor" aria-label="anchor" href="#arg-export-check-model"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, exports model diagnostic plots
+from <code><a href="https://easystats.github.io/performance/reference/check_model.html" class="external-link">performance::check_model()</a></code>. Default is <code>FALSE</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A numeric vector of corrected values after standardisation. Length matches
-number of rows in <code>data</code>; values for which residuals are not computable are
-returned as <code>NA</code>.</p>
+the number of rows in <code>data</code>; values for which residuals cannot be computed
+are returned as <code>NA</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The function selects protocol variables with p &lt; 0.2 in ANOVA to adjust for
-protocol effects. It constructs a model, extracts residuals, and adjusts
-exposures by subtracting estimated effects. Forced variables are included
-even if not statistically significant. The resulting corrected variable is
-returned as a numeric vector.</p>
+    <p>The function selects protocol variables with p-value &lt; 0.2 in ANOVA to adjust
+for protocol effects. A linear model is fitted including selected protocol
+variables and covariates. Residual-based corrections are computed and applied
+to the exposure variable. If no protocol variable is selected, the original
+variable is returned unmodified. Forced variables are always included.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></code>, <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></code>, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></code>, <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals</a></code></p></div>
+    <div class="dont-index"><p><code><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></code>, <code><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></code>, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></code>,
+<code><a href="https://easystats.github.io/performance/reference/check_model.html" class="external-link">check_model</a></code>, <code><a href="https://rdrr.io/pkg/car/man/Anova.html" class="external-link">Anova</a></code></p></div>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Example dataset</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">113</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  exposure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">100</span>, mean <span class="op">=</span> <span class="fl">5</span>, sd <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  protocol_var1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"C"</span><span class="op">)</span>, <span class="fl">100</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span></span>
@@ -130,18 +135,16 @@ returned as a numeric vector.</p>
 <span class="r-in"><span>  age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">100</span>, mean <span class="op">=</span> <span class="fl">35</span>, sd <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Apply standardisation function</span></span></span>
-<span class="r-in"><span><span class="va">standardised_values</span> <span class="op">&lt;-</span> <span class="va">data</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span><span class="va">data</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>    exposure_std <span class="op">=</span> <span class="fu">standardise</span><span class="op">(</span></span></span>
 <span class="r-in"><span>      var_to_std <span class="op">=</span> <span class="st">"exposure"</span>,</span></span>
 <span class="r-in"><span>      protocol_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"protocol_var1"</span>, <span class="st">"protocol_var2"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>      covariates <span class="op">=</span> <span class="st">"age"</span>,</span></span>
-<span class="r-in"><span>      folder <span class="op">=</span> <span class="st">"outputs/"</span></span></span>
+<span class="r-in"><span>      folder <span class="op">=</span> <span class="st">"outputs/"</span>,</span></span>
+<span class="r-in"><span>      export_check_model <span class="op">=</span> <span class="cn">TRUE</span></span></span>
 <span class="r-in"><span>    <span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">standardised_values</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
