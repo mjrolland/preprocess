@@ -10,7 +10,8 @@ standardise(
   protocol_vars,
   covariates = NULL,
   folder,
-  group = dplyr::cur_group()
+  group = dplyr::cur_group(),
+  force = NULL
 )
 }
 \arguments{
@@ -20,34 +21,38 @@ i.e., one row per ID and per exposure.}
 \item{var_to_std}{A character string representing the variable to standardise.
 This variable should be normally distributed.}
 
-\item{protocol_vars}{A character vector representing potential protocol
-variables on which to standardise.}
+\item{protocol_vars}{A character vector of potential protocol variables on
+which to standardise.}
 
 \item{covariates}{A character vector of names of model covariates.}
 
-\item{folder}{A character string representing the folder where standardisation
-regression outputs will be saved}
+\item{folder}{A character string representing the folder where regression
+outputs will be saved.}
 
-\item{group}{A character string representing the grouping variable for
-exposure. Defaults to the current grouping.}
+\item{group}{A character string or vector representing the exposure group.
+Used for naming output files and tracking grouping structure.
+Defaults to the current grouping (via \code{dplyr::cur_group()}).}
+
+\item{force}{A character vector of protocol variables to forcibly include in
+the model regardless of statistical significance. Default is \code{NULL}.}
 }
 \value{
-A numeric vector containing the corrected values after standardisation.
-The length of the returned vector is the same as the number of rows in
-the input data. Non-computable residuals are returned as \code{NA}.
+A numeric vector of corrected values after standardisation. Length matches
+number of rows in \code{data}; values for which residuals are not computable are
+returned as \code{NA}.
 }
 \description{
 This function standardises the exposure data on selected protocol variables
-(either categorical or continuous) as per the sepages pipeline guide.
+(either categorical or continuous) as per the SEPAGES pipeline guide.
 The function is designed to be called within a \code{mutate} call on grouped data,
 where each group represents a different exposure.
 }
 \details{
-The function selects the final protocol variables on which to standardise
-based on p < 0.2. It constructs a formula, computes model residuals,
-sets reference values for prediction, computes standardised values, and
-finally returns a vector with corrected values and NA for non-computable
-residuals, maintaining the length same as input data.
+The function selects protocol variables with p < 0.2 in ANOVA to adjust for
+protocol effects. It constructs a model, extracts residuals, and adjusts
+exposures by subtracting estimated effects. Forced variables are included
+even if not statistically significant. The resulting corrected variable is
+returned as a numeric vector.
 }
 \examples{
 \dontrun{

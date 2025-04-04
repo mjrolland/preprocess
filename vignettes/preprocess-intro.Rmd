@@ -41,7 +41,10 @@ library(rio)
 
 # Introduction
 
-This vignette demonstrates the use of simulated datasets to illustrate the application of the fill_in and standardise functions for preprocessing environmental exposure data.
+This vignette demonstrates the use of simulated datasets to illustrate the application of the `fill_in` and `standardise` functions for preprocessing environmental exposure data.
+
+⚠️ **Important**: The `fill_in` function assumes that the variable to impute is normally distributed. It is the user’s responsibility to apply the appropriate transformation (e.g., log-transformation) to ensure normality prior to using this function. The same transformation must be applied to the Limit of Detection (LOD) to ensure consistency.
+
 
 Specifically, it covers how to:
 
@@ -168,7 +171,10 @@ ggplot(dt_exp_long, aes(x = val_num)) +
 
 The `fill_in` function is written to be used on tidy data (one row per id and per exposure). It is important to specify the `.by` argument of the `mutate` call in order to separately impute data below LOD for each group. This is important because this step requires computing exposure specific distribution parameters, and LOD can also vary from one exposure to another. In this simple example the only grouping variable is the exposure, but there could be more groups on which we would like to apply the fill-in procedure separately like exposure *and* sample period, in which case the `.by` argument of the `mutate` call would be modified to `.by = c(exp, period)`. 
 
-Also note that data needs to be normally distributed, and if the data is log transformed, the LOD also needs to be log transformed.
+**Important**: The `fill_in` function uses the method of Helsel (1990), which assumes that the variable to be imputed follows a **normal distribution**. In environmental epidemiology, exposure variables are often log-normally distributed. Therefore, the user **must apply a log-transformation** (or another appropriate transformation) to the variable **before** calling `fill_in`, and **must apply the same transformation to the LOD**.
+
+The function does not perform any transformation by itself and relies on the user to ensure distributional assumptions are met.
+
 
 Fill in is done like this:
 

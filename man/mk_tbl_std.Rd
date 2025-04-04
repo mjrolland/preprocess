@@ -7,28 +7,24 @@
 mk_tbl_std(path, lst_prot_vars)
 }
 \arguments{
-\item{path}{Character string. Path to the folder containing AOV result files.}
+\item{path}{Character string. Path to the folder containing AOV result files in \code{.xlsx} format.}
 
-\item{lst_prot_vars}{Character vector. List of variable names to check in the AOV results.}
+\item{lst_prot_vars}{Character vector. List of protocol variables to check for significance.}
 }
 \value{
-A tibble with exposures as rows and variables as columns, where \code{"X"}
-indicates a significant association (p < 0.2).
+A tibble in wide format with one row per exposure and one column per protocol variable.
+The value \code{"X"} indicates that the variable was significantly associated (p < 0.2) with the exposure.
+Empty cells mean non-significant or missing data.
 }
 \description{
-This function scans a directory for files ending in \verb{_aov.csv}, extracts
-variables with a p-value below 0.2, and creates a summary table indicating
-which variables were found to be significant.
+This function scans a directory for AOV result files (in \code{.xlsx} format, ending with \verb{_aov.xlsx}),
+extracts protocol variables with a p-value < 0.2, and creates a wide-format summary table.
+Each row corresponds to an exposure and each column to a protocol variable.
 }
 \examples{
 \dontrun{
-# Define the path to the folder with AOV results
-path_to_results <- "path/to/aov/files/"
-
-# Define the list of variables to check
-prot_vars <- c("var1", "var2", "var3")
-
-# Generate the summary table
+path_to_results <- "outputs/aov_results/"
+prot_vars <- c("batch", "season", "storage_time")
 mk_tbl_std(path_to_results, prot_vars)
 }
 }
