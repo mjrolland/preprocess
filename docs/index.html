@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="index.html">preprocess</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.10</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.11</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,7 +42,8 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/preprocess-intro.html">Introduction to preprocess</a></li>
+<li><a class="dropdown-item" href="articles/pipeline-guide.html">Sepages pipeline guide</a></li>
+    <li><a class="dropdown-item" href="articles/preprocess-intro.html">Introduction to preprocess</a></li>
   </ul>
 </li>
       </ul>
@@ -62,47 +63,62 @@
 <img src="logo.png" class="logo" alt=""><h1 id="preprocess">preprocess<a class="anchor" aria-label="anchor" href="#preprocess"></a>
 </h1>
 </div>
-<p>An R package for preprocessing environmental datasets.</p>
+<p>An R package for preprocessing environmental exposure data, with a focus on handling left-censored measurements and standardising for protocol-related variability.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>You can install this package from GitHub using <code>devtools</code>:</p>
+<p>You can install the development version from GitHub using <code>devtools</code>:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"mjrolland/preprocess"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
+<h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mjrolland.github.io/preprocess">preprocess</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mjrolland.github.io/preprocess">preprocess</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Impute values below the limit of detection</span></span>
+<span><span class="va">imputed</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fill_in.html">fill_in</a></span><span class="op">(</span>var_to_fill <span class="op">=</span> <span class="va">x</span>, lod <span class="op">=</span> <span class="va">lod</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Standardise exposure values on protocol variables</span></span>
+<span><span class="va">standardised</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/standardise.html">standardise</a></span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="va">your_data</span>,</span>
+<span>  var_to_std <span class="op">=</span> <span class="st">"x"</span>,</span>
+<span>  protocol_vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"batch"</span>, <span class="st">"storage_time"</span><span class="op">)</span>,</span>
+<span>  covariates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"season"</span><span class="op">)</span>,</span>
+<span>  folder <span class="op">=</span> <span class="st">"model_outputs"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="functions">Functions<a class="anchor" aria-label="anchor" href="#functions"></a>
+<h2 id="core-functions">Core Functions<a class="anchor" aria-label="anchor" href="#core-functions"></a>
 </h2>
 <ul>
 <li>
-<code><a href="reference/fill_in.html">fill_in()</a></code>: Handles values below the limit of detection.</li>
+<code><a href="reference/fill_in.html">fill_in()</a></code>: Imputes values below the limit of detection (LOD) using censored regression on order statistics.</li>
 <li>
-<code><a href="reference/standardise.html">standardise()</a></code>: Standardizes exposure data based on protocol variables.</li>
+<code><a href="reference/standardise.html">standardise()</a></code>: Corrects for protocol effects using linear models with variable selection.</li>
+<li>
+<code><a href="reference/mk_tbl_std.html">mk_tbl_std()</a></code>: Summarises protocol variables associated with exposures across models.</li>
+<li>
+<code><a href="reference/get_protocol_var.html">get_protocol_var()</a></code>: Selects relevant protocol variables for standardisation based on ANOVA results.</li>
 </ul>
 </div>
 <div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
 </h2>
-<p>For a practical <strong>step-by-step guide</strong> on using this package, refer to the <strong>vignette</strong> or the <strong>accompanying article</strong>:</p>
+<p>The package includes detailed articles to guide your use:</p>
 <ul>
-<li>Vignette: <code><a href="articles/preprocess-intro.html">vignette("preprocess-intro", package = "preprocess")</a></code>
-</li>
-<li>Article: <a href="https://mjrolland.github.io/preprocess/articles/preprocess-intro.html">Preprocessing Environmental Data</a>
-</li>
+<li><p><a href="https://mjrolland.github.io/preprocess/articles/preprocess-intro.html">Preprocessing Environmental Data</a><br><em>Walkthrough of a typical preprocessing pipeline using simulated data.</em></p></li>
+<li><p><a href="https://mjrolland.github.io/preprocess/articles/preprocessing-methodology.html">Preprocessing Methodology</a><br><em>Overview of the theoretical framework and main steps involved.</em></p></li>
 </ul>
-<p>For a <strong>theoretical background</strong> on the preprocessing methodology, see the detailed documentation:</p>
-<p><a href="https://bookdown.org/mj_rolland/sepages_pipeline_doc/" class="external-link">https://bookdown.org/mj_rolland/sepages_pipeline_doc/</a></p>
+<p>You can also access the vignette from R:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"preprocess-intro"</span>, package <span class="op">=</span> <span class="st">"preprocess"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="contributing">Contributing<a class="anchor" aria-label="anchor" href="#contributing"></a>
 </h2>
-<p>Contributions are welcome! Feel free to submit issues or pull requests.</p>
+<p>Feedback, issues and contributions are welcome. Please open an issue or submit a pull request.</p>
 </div>
 <div class="section level2">
 <h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>

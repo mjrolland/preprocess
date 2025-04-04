@@ -2,8 +2,9 @@ pandoc: '3.2'
 pkgdown: 2.1.1
 pkgdown_sha: ~
 articles:
+  pipeline-guide: pipeline-guide.html
   preprocess-intro: preprocess-intro.html
-last_built: 2025-04-04T13:17Z
+last_built: 2025-04-04T13:48Z
 urls:
   reference: https://mjrolland.github.io/preprocess/reference
   article: https://mjrolland.github.io/preprocess/articles
