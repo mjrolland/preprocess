@@ -178,15 +178,14 @@ standardise <- function(
   final_std_vars <- get_protocol_var(data, var_to_std, protocol_vars, covariates, folder, group)
   if(!is.null(force)){final_std_vars = c(final_std_vars, force)}
 
+  # --> EXIT EARLY IF NOTHING TO ADJUST FOR
+  if (length(final_std_vars) == 0) {
+    return(data[[var_to_std]])
+  }
+
   # Construct model formula with final protocol variables (p < 0.2)
-  form <- stringr::str_c(
-    var_to_std,
-    "~",
-    paste(final_std_vars, collapse = "+"),
-    if(!is.null(covariates)){"+"},
-    paste(covariates, collapse = "+")
-  ) |>
-    as.formula()
+  rhs <- c(final_std_vars, covariates) |> purrr::compact() |> paste(collapse = " + ")
+  form <- as.formula(paste(var_to_std, "~", rhs))
 
   # Fit model
   lm1 <- lm(form, data = data)
