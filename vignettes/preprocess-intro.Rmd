@@ -314,8 +314,8 @@ dt_std <- dt_imp |>
   mutate(
     log10_val_i_std = standardise(
       var_to_std = "log10_val_i",               # variable to be standardised
-      protocol_vars = lst_prot_vars,  # list of candidate protocol variables
-      covariates = lst_cov,              # optional list of covariates, defaults to NULL
+      protocol_vars = lst_prot_vars,            # list of candidate protocol variables
+      covariates = lst_cov,                     # optional list of covariates, defaults to NULL
       folder = "standardisation_outputs"        # folder where outputs are saved
     ),
     .by = exp                                   # grouping variable
@@ -326,16 +326,18 @@ It is crucial to look at the standardisation process outputs and the data poster
 
 All outputs are saved in the folder defined in the `path` argument.
 
+If you want to inspect model diagnostics (linearity, residuals, homoscedasticity, etc.), you can enable the optional argument `export_check_model = TRUE` in the `standardise()` function. This will save model diagnostic plots produced by `performance::check_model()` in the same folder as the other outputs. This can help verify that linear model assumptions hold for the correction models.
+
 We can first have a look at the associated protocol variables, that were used for the correction:
 
 ```{r echo=FALSE}
-tbl_aov_exp1 <- import("standardisation_outputs/exp1_aov.csv") |> 
+tbl_aov_exp1 <- import("standardisation_outputs/exp1_aov.xlsx") |> 
   transmute(protocol_vars = term, exp1 = p.value)
 
-tbl_aov_exp2 <- import("standardisation_outputs/exp2_aov.csv") |> 
+tbl_aov_exp2 <- import("standardisation_outputs/exp2_aov.xlsx") |> 
   transmute(protocol_vars = term, exp2 = p.value)
 
-tbl_aov_exp4 <- import("standardisation_outputs/exp4_aov.csv") |> 
+tbl_aov_exp4 <- import("standardisation_outputs/exp4_aov.xlsx") |> 
   transmute(protocol_vars = term, exp4 = p.value)
 
 tbl_aov <- tbl_aov_exp1 |>

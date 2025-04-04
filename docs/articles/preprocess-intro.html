@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">preprocess</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.9</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.10</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,7 +76,7 @@
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://stringr.tidyverse.org" class="external-link">stringr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://readr.tidyverse.org" class="external-link">readr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tibble.tidyverse.org/" class="external-link">tibble</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">preprocess</span><span class="op">)</span></span></code></pre></div>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mjrolland.github.io/preprocess">preprocess</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
@@ -806,8 +806,8 @@ function:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    log10_val_i_std <span class="op">=</span> <span class="fu"><a href="../reference/standardise.html">standardise</a></span><span class="op">(</span></span>
 <span>      var_to_std <span class="op">=</span> <span class="st">"log10_val_i"</span>,               <span class="co"># variable to be standardised</span></span>
-<span>      protocol_vars <span class="op">=</span> <span class="va">lst_prot_vars</span>,  <span class="co"># list of candidate protocol variables</span></span>
-<span>      covariates <span class="op">=</span> <span class="va">lst_cov</span>,              <span class="co"># optional list of covariates, defaults to NULL</span></span>
+<span>      protocol_vars <span class="op">=</span> <span class="va">lst_prot_vars</span>,            <span class="co"># list of candidate protocol variables</span></span>
+<span>      covariates <span class="op">=</span> <span class="va">lst_cov</span>,                     <span class="co"># optional list of covariates, defaults to NULL</span></span>
 <span>      folder <span class="op">=</span> <span class="st">"standardisation_outputs"</span>        <span class="co"># folder where outputs are saved</span></span>
 <span>    <span class="op">)</span>,</span>
 <span>    .by <span class="op">=</span> <span class="va">exp</span>                                   <span class="co"># grouping variable</span></span>
@@ -817,6 +817,13 @@ data posterior to the standardisation step to make sure what was done
 matches what was expected.</p>
 <p>All outputs are saved in the folder defined in the <code>path</code>
 argument.</p>
+<p>If you want to inspect model diagnostics (linearity, residuals,
+homoscedasticity, etc.), you can enable the optional argument
+<code>export_check_model = TRUE</code> in the <code><a href="../reference/standardise.html">standardise()</a></code>
+function. This will save model diagnostic plots produced by
+<code><a href="https://easystats.github.io/performance/reference/check_model.html" class="external-link">performance::check_model()</a></code> in the same folder as the other
+outputs. This can help verify that linear model assumptions hold for the
+correction models.</p>
 <p>We can first have a look at the associated protocol variables, that
 were used for the correction:</p>
 <div id="psxunkjlhk" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
