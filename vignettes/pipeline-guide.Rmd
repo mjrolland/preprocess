@@ -1,5 +1,5 @@
 ---
-title: "Sepages pipeline guide"
+title: "Sepages pipeline methodological guide"
 output: rmarkdown::html_document
 vignette: >
   %\VignetteIndexEntry{Sepages pipeline guide}

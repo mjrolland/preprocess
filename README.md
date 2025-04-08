@@ -33,7 +33,6 @@ standardised <- standardise(
 - `fill_in()`: Imputes values below the limit of detection (LOD) using censored regression on order statistics.
 - `standardise()`: Corrects for protocol effects using linear models with variable selection.
 - `mk_tbl_std()`: Summarises protocol variables associated with exposures across models.
-- `get_protocol_var()`: Selects relevant protocol variables for standardisation based on ANOVA results.
 
 ## Documentation
 
@@ -42,7 +41,7 @@ The package includes detailed articles to guide your use:
 - [Preprocessing Environmental Data](https://mjrolland.github.io/preprocess/articles/preprocess-intro.html)  
   *Walkthrough of a typical preprocessing pipeline using simulated data.*
 
-- [Preprocessing Methodology](https://mjrolland.github.io/preprocess/articles/preprocessing-methodology.html)  
+- [Preprocessing Methodology](https://bookdown.org/mj_rolland/sepages_pipeline_doc/)  
   *Overview of the theoretical framework and main steps involved.*
 
 You can also access the vignette from R:

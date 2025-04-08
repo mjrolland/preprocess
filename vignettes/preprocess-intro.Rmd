@@ -1,5 +1,5 @@
 ---
-title: "Introduction to preprocess"
+title: "Introduction to preprocess - package tutorial"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{preprocess-intro}
@@ -201,9 +201,11 @@ Then systematically visualise the imputations to make sure everything went as ex
 dt_imp |>
   mutate(
     color = case_when(
-      val_num > lod ~ "imputed",
-      val_num <= lod ~ "not imputed"
-    )
+      val_num > lod ~ "not imputed",
+      val_num <= lod ~ "imputed"
+    ),
+    color = as.factor(color),
+    color = forcats::fct_rev(color)
   ) |> 
   ggplot(aes(x = 10^log10_val_i, fill = color)) +
   geom_histogram(alpha = 0.8) +
