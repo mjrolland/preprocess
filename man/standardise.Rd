@@ -12,7 +12,8 @@ standardise(
   folder,
   group = dplyr::cur_group(),
   force = NULL,
-  export_check_model = FALSE
+  export_check_model = FALSE,
+  p_thresh = 0.05
 )
 }
 \arguments{
@@ -39,6 +40,9 @@ the model regardless of statistical significance. Default is \code{NULL}.}
 
 \item{export_check_model}{Logical. If \code{TRUE}, exports model diagnostic plots
 from \code{performance::check_model()}. Default is \code{FALSE}.}
+
+\item{p_thresh}{Numeric. The p-value threshold used to select protocol variables
+for adjustment. Default is \code{0.05}.}
 }
 \value{
 A numeric vector of corrected values after standardisation. Length matches

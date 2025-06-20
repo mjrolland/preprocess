@@ -124,6 +124,8 @@ fill_in <- function(var_to_fill, lod, loq = NULL){
 #'   the model regardless of statistical significance. Default is `NULL`.
 #' @param export_check_model Logical. If `TRUE`, exports model diagnostic plots
 #'   from `performance::check_model()`. Default is `FALSE`.
+#' @param p_thresh Numeric. The p-value threshold used to select protocol variables
+#'   for adjustment. Default is `0.05`.
 #'
 #' @details
 #' The function selects protocol variables with p-value < 0.2 in ANOVA to adjust
@@ -172,10 +174,11 @@ standardise <- function(
     folder,
     group = dplyr::cur_group(),
     force = NULL,
-    export_check_model = FALSE
+    export_check_model = FALSE,
+    p_thresh = 0.05
 ){
   # Select protocol variables for standardisation (p < 0.2)
-  final_std_vars <- get_protocol_var(data, var_to_std, protocol_vars, covariates, folder, group, export_check_model)
+  final_std_vars <- get_protocol_var(data, var_to_std, protocol_vars, covariates, folder, group, export_check_model, p_thresh)
   if(!is.null(force)){final_std_vars = c(final_std_vars, force)}
 
   # --> EXIT EARLY IF NOTHING TO ADJUST FOR
@@ -272,6 +275,8 @@ standardise <- function(
 #'   (typically the exposure variable name).
 #' @param export_check_model Logical. If `TRUE`, exports model diagnostic plots
 #'   from `performance::check_model()`. Default is `FALSE`.
+#' @param p_thresh Numeric. The p-value threshold used to select protocol variables
+#'   for adjustment. Default is `0.05`.
 #'
 #' @return A character vector containing the names of the protocol variables
 #'   with p-value < 0.2, to be used for standardisation.
@@ -281,7 +286,7 @@ standardise <- function(
 #'
 #' @export
 
-get_protocol_var <- function(data, var_to_std, protocol_vars, covariates, folder, group, export_check_model){
+get_protocol_var <- function(data, var_to_std, protocol_vars, covariates, folder, group, export_check_model, p_thresh){
   # Construct linear model formula
   model_formula <- stringr::str_c(
     var_to_std,
@@ -318,7 +323,7 @@ get_protocol_var <- function(data, var_to_std, protocol_vars, covariates, folder
     as.data.frame() |>
     tibble::rownames_to_column(var = "term") |>
     dplyr::rename(p = "Pr(>F)") |>
-    dplyr::filter(term %in% protocol_vars & p < 0.2) |>
+    dplyr::filter(term %in% protocol_vars & p < p_thresh) |>
     dplyr::pull(term)
 
   return(final_std_vars)

@@ -11,7 +11,8 @@ get_protocol_var(
   covariates,
   folder,
   group,
-  export_check_model
+  export_check_model,
+  p_thresh
 )
 }
 \arguments{
@@ -35,6 +36,9 @@ summary, ANOVA table, optional model check) will be saved.}
 
 \item{export_check_model}{Logical. If \code{TRUE}, exports model diagnostic plots
 from \code{performance::check_model()}. Default is \code{FALSE}.}
+
+\item{p_thresh}{Numeric. The p-value threshold used to select protocol variables
+for adjustment. Default is \code{0.05}.}
 }
 \value{
 A character vector containing the names of the protocol variables
