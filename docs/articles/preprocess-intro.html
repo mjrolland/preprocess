@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">preprocess</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -691,7 +691,7 @@ column:</p>
 </table>
 </div>
 <p>Exposure level distribution:</p>
-<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-10-1.png" width="672"></p>
+<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-10-1.png" class="r-plt" width="672"></p>
 <p>=&gt; We observe different rates of data below LOD. Based on this,
 exposures that are considered having too high rates of data &lt; LOD
 need to be excluded from the imputation-standardisation process. In this
@@ -739,7 +739,7 @@ on the user to ensure distributional assumptions are met.</p>
 reproducibility.</p>
 <p>Then systematically visualise the imputations to make sure everything
 went as expected:</p>
-<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-12-1.png" width="672"></p>
+<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" width="672"></p>
 <p>We see that imputed data is below LOD, and seem to have been drawn
 from the correct distribution.</p>
 </div>
@@ -753,7 +753,7 @@ while taking into account the covariates <code>season</code> and
 <p>We start by describing the data.</p>
 <p>We can observe the batch effect for <code>exp1</code> and
 <code>exp4</code>:</p>
-<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-13-1.png" width="576"></p>
+<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-13-1.png" class="r-plt" width="576"></p>
 <p>And we can observe the effect of season for <code>exp4</code>:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">dt_imp</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">season</span><span class="op">)</span>, y <span class="op">=</span> <span class="va">log10_val_i</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
@@ -763,10 +763,10 @@ while taking into account the covariates <code>season</code> and
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
 <span>    title <span class="op">=</span> <span class="st">"Imputed exposure level by season, for each exposure prior to standardising"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
-<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-14-1.png" width="576"></p>
+<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-14-1.png" class="r-plt" width="576"></p>
 <p>And finally we observe an unequal distribution of season by
 batch:</p>
-<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-15-1.png" width="384"></p>
+<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-15-1.png" class="r-plt" width="384"></p>
 <p>This justifies the inclusion of <code>season</code> as a covariate in
 the standardisation models, in order to differentiate the effect of
 <code>batch</code> from the effect of <code>season</code>, because we
@@ -774,7 +774,7 @@ want to standardise for <code>batch</code> but not for
 <code>season</code>.</p>
 <p>We can also observe the association between <code>exp2</code> and
 <code>prot1</code>:</p>
-<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-16-1.png" width="672"></p>
+<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-16-1.png" class="r-plt" width="672"></p>
 <p>The goal of the standardisation process is to detect among all the
 protocol variables (<code>batch</code>, <code>prot1</code> and
 <code>prot2</code>) which are associated with which exposure, and
@@ -1307,12 +1307,12 @@ were used for the correction:</p>
 <p>We see that the correct variables were detected.</p>
 <p>We can see the correction for the batch effect of <code>exp1</code>
 and <code>exp4</code>:</p>
-<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-21-1.png" width="576"></p>
+<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-21-1.png" class="r-plt" width="576"></p>
 <p>We can note that there is still residual variability between batches
 for <code>exp4</code>, in our case this can be explained by the
 <code>season</code> effect for which we have not adjusted.</p>
 <p>And the correction of <code>exp2</code> for <code>prot1</code>:</p>
-<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-22-1.png" width="672"></p>
+<p><img src="preprocess-intro_files/figure-html/unnamed-chunk-22-1.png" class="r-plt" width="672"></p>
 <p>Note: The correction may not be so apparent, as realistic data likely
 possesses greater residual variability.</p>
 </div>
@@ -1327,7 +1327,7 @@ possesses greater residual variability.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer>
